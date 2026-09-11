@@ -132,5 +132,10 @@ drop policy if exists "admin read order items" on order_items;
 create policy "admin read order items" on order_items
   for select using (is_admin());
 
--- Admins table only manageable by service role (no public policy needed;
--- add yourself as an admin via the SQL editor, see README).
+-- Admins: a signed-in user may read their own row. The admin layout and the
+-- import route check admin status with the normal RLS-bound client, so without
+-- this policy every login shows "Not authorized" even when the row exists.
+-- Writes stay restricted to the SQL editor / service role (no insert policy).
+drop policy if exists "admins can read own row" on admins;
+create policy "admins can read own row" on admins
+  for select using (auth.uid() = user_id);
