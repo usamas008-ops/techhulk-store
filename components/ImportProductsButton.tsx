@@ -15,7 +15,13 @@ export default function ImportProductsButton() {
       const res = await fetch("/api/admin/import-products", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Import failed");
-      setResult(`Imported ${data.imported} of ${data.total} products.`);
+      const errs: string[] = Array.isArray(data.errors) ? data.errors : [];
+      setResult(
+        `Imported ${data.imported} of ${data.total} products.` +
+          (errs.length
+            ? ` ${errs.length} failed: ${errs.slice(0, 3).join(" | ")}${errs.length > 3 ? " ..." : ""}`
+            : "")
+      );
       router.refresh();
     } catch (err: any) {
       setResult(err.message || "Something went wrong");
