@@ -48,6 +48,14 @@ function slugify(text) {
     .replace(/(^-|-$)/g, "");
 }
 
+// Shopify public products.json returns tags as an array; the Admin API
+// returns a comma-separated string. Support both so category never throws.
+function firstTag(tags) {
+  if (Array.isArray(tags)) return String(tags[0] ?? "").trim();
+  if (typeof tags === "string") return tags.split(",")[0].trim();
+  return "";
+}
+
 function stripToPlainImageUrl(src) {
   if (!src) return null;
   return src.startsWith("//") ? `https:${src}` : src;
@@ -103,7 +111,7 @@ async function upsertProduct(shopifyProduct) {
     handle,
     title: shopifyProduct.title,
     description: shopifyProduct.body_html || "",
-    category: shopifyProduct.product_type || shopifyProduct.tags?.split(",")[0]?.trim() || "",
+    category: shopifyProduct.product_type || firstTag(shopifyProduct.tags),
     image_url: firstImage,
     images: allImages,
     price,
