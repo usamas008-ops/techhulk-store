@@ -7,17 +7,35 @@ export default function CheckoutSuccessPage({
 }) {
   return (
     <div className="container-page py-20 text-center">
-      <p className="text-signal">Order confirmed</p>
-      <h1 className="mt-2 font-display text-3xl font-bold text-paper">
-        Thank you! {searchParams.order && `Order #${searchParams.order}`}
+      <p className="eyebrow text-leaf">Order confirmed</p>
+
+      <h1 className="mx-auto mt-3 max-w-xl font-display text-[30px] font-bold leading-tight text-night sm:text-[38px]">
+        Thank you{searchParams.order ? `, order #${searchParams.order}` : ""}
       </h1>
-      <p className="mx-auto mt-3 max-w-md text-muted">
-        We'll call you to confirm delivery details. Pay in cash when your
-        order arrives.
+
+      <p className="mx-auto mt-4 max-w-md text-[13px] leading-relaxed text-slate">
+        We will call you shortly to confirm your delivery details. Keep the cash
+        ready and pay the courier when your parcel arrives.
       </p>
+
+      <div className="mx-auto mt-8 grid max-w-lg gap-3 text-left sm:grid-cols-3">
+        <div className="border border-hair bg-card p-4">
+          <p className="eyebrow text-slate">Step 1</p>
+          <p className="mt-1 text-[12px] text-night">We call to confirm</p>
+        </div>
+        <div className="border border-hair bg-card p-4">
+          <p className="eyebrow text-slate">Step 2</p>
+          <p className="mt-1 text-[12px] text-night">Parcel is dispatched</p>
+        </div>
+        <div className="border border-hair bg-card p-4">
+          <p className="eyebrow text-slate">Step 3</p>
+          <p className="mt-1 text-[12px] text-night">Pay cash at the door</p>
+        </div>
+      </div>
+
       <Link
         href="/"
-        className="mt-8 inline-block rounded-sm bg-signal px-6 py-3 font-semibold text-ink"
+        className="mt-9 inline-block rounded-full bg-night px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-leaf"
       >
         Continue shopping
       </Link>

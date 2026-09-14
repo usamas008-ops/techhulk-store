@@ -4,6 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
 
+const fields = [
+  ["customer_name", "Full name", "Ali Raza"],
+  ["phone", "Phone number", "03xx xxxxxxx"],
+  ["address", "Address", "House, street, area"],
+  ["city", "City", "Lahore"],
+] as const;
+
 export default function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
   const router = useRouter();
@@ -19,8 +26,11 @@ export default function CheckoutPage() {
 
   if (items.length === 0 && !submitting) {
     return (
-      <div className="container-page py-16 text-center text-muted">
-        Your cart is empty.
+      <div className="container-page py-20 text-center">
+        <h1 className="section-title">Your cart is empty</h1>
+        <p className="mt-3 text-[13px] text-slate">
+          Add something to the cart before checking out.
+        </p>
       </div>
     );
   }
@@ -43,84 +53,107 @@ export default function CheckoutPage() {
       clear();
       router.push(`/checkout/success?order=${data.orderNumber}`);
     } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(
+        err.message === "Failed to fetch"
+          ? "Could not reach the server. Check your connection and try again."
+          : err.message || "Something went wrong. Please try again."
+      );
       setSubmitting(false);
     }
   };
 
+  const inputClass =
+    "w-full border border-hair bg-card px-3.5 py-2.5 text-[13px] text-night placeholder:text-slate/60";
+
   return (
-    <div className="container-page grid gap-10 py-12 lg:grid-cols-[1fr_320px]">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <h1 className="font-display text-2xl font-semibold text-paper">
+    <div className="container-page grid gap-8 py-10 lg:grid-cols-[1fr_340px]">
+      <form onSubmit={handleSubmit}>
+        <h1 className="section-title mb-5 border-b border-hair pb-3">
           Delivery details
         </h1>
 
-        {(
-          [
-            ["customer_name", "Full name"],
-            ["phone", "Phone number"],
-            ["address", "Address"],
-            ["city", "City"],
-          ] as const
-        ).map(([key, label]) => (
-          <div key={key}>
-            <label className="mb-1 block text-sm text-muted">{label}</label>
-            <input
-              required
-              value={form[key]}
-              onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-              className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
+        <div className="space-y-4">
+          {fields.map(([key, label, placeholder]) => (
+            <div key={key}>
+              <label className="eyebrow mb-2 block text-slate">{label}</label>
+              <input
+                required
+                placeholder={placeholder}
+                value={form[key]}
+                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+          ))}
+
+          <div>
+            <label className="eyebrow mb-2 block text-slate">
+              Notes, optional
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Nearest landmark, delivery timing, anything else"
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              className={inputClass}
             />
           </div>
-        ))}
-
-        <div>
-          <label className="mb-1 block text-sm text-muted">
-            Notes (optional)
-          </label>
-          <textarea
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
-            rows={3}
-          />
         </div>
 
-        <div className="rounded-sm border border-line bg-panel p-4 text-sm text-muted">
-          Payment method: <span className="text-paper">Cash on Delivery</span>
+        <div className="mt-5 border border-hair bg-card p-4">
+          <p className="eyebrow text-slate">Payment method</p>
+          <p className="mt-1 text-[13px] font-semibold text-night">
+            Cash on Delivery
+          </p>
+          <p className="mt-1 text-[12px] text-slate">
+            Pay the courier in cash when your parcel arrives. No advance
+            payment.
+          </p>
         </div>
 
-        {error && <p className="text-danger">{error}</p>}
+        {error && (
+          <p className="mt-4 border border-sale/30 bg-sale/5 px-4 py-3 text-[13px] text-sale">
+            {error}
+          </p>
+        )}
 
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-sm bg-signal px-6 py-3 font-semibold text-ink hover:opacity-90 disabled:opacity-50"
+          className="mt-5 w-full rounded-full bg-night px-6 py-4 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-leaf disabled:opacity-50"
         >
-          {submitting ? "Placing order..." : "Place order (Cash on Delivery)"}
+          {submitting ? "Placing order..." : "Place order, pay on delivery"}
         </button>
       </form>
 
-      <div className="h-fit space-y-3 rounded-md border border-line bg-panel p-6">
-        <h2 className="font-display text-lg font-semibold text-paper">
-          Order summary
-        </h2>
-        {items.map((item) => (
-          <div
-            key={`${item.productId}-${item.variantId}`}
-            className="flex justify-between text-sm text-muted"
-          >
-            <span>
-              {item.title} × {item.quantity}
-            </span>
-            <span className="text-paper">
-              Rs. {(item.price * item.quantity).toLocaleString()}
-            </span>
-          </div>
-        ))}
-        <div className="flex justify-between border-t border-line pt-3 font-semibold text-paper">
+      <div className="h-fit border border-hair bg-card p-6">
+        <p className="eyebrow text-night">Order summary</p>
+
+        <div className="mt-4 space-y-3">
+          {items.map((item) => (
+            <div
+              key={`${item.productId}-${item.variantId}`}
+              className="flex justify-between gap-3 text-[12px]"
+            >
+              <span className="text-slate">
+                {item.title}
+                {item.variantTitle ? ` (${item.variantTitle})` : ""} x
+                {item.quantity}
+              </span>
+              <span className="whitespace-nowrap font-semibold text-night">
+                Rs.{(item.price * item.quantity).toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex justify-between border-t border-hair pt-4 text-[13px] text-graphite">
+          <span>Delivery</span>
+          <span className="font-semibold text-leaf">Free</span>
+        </div>
+        <div className="mt-2 flex justify-between text-[15px] font-bold text-night">
           <span>Total</span>
-          <span>Rs. {subtotal.toLocaleString()}</span>
+          <span>Rs.{subtotal.toLocaleString()}</span>
         </div>
       </div>
     </div>

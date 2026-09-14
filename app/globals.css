@@ -12,21 +12,99 @@ html {
 }
 
 body {
-  background-color: #0e170f;
-  color: #f3f3ee;
+  background-color: #f0f0f0;
+  color: #3d3d3d;
 }
 
 ::selection {
-  background-color: #c7ff4d;
-  color: #0e170f;
+  background-color: #141414;
+  color: #ffffff;
 }
 
 .container-page {
-  max-width: 1180px;
+  max-width: 1240px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Small uppercase label used above headings and on cards. */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Uppercase section heading, ruled underneath. */
+.section-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #141414;
+}
+
+@media (min-width: 640px) {
+  .section-title {
+    font-size: 24px;
+  }
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Product descriptions arrive as HTML from the source catalog. */
+.rich-text p,
+.rich-text ul,
+.rich-text ol {
+  margin-bottom: 0.85rem;
+}
+
+.rich-text ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+
+.rich-text ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+
+.rich-text li {
+  margin-bottom: 0.3rem;
+}
+
+.rich-text h2,
+.rich-text h3,
+.rich-text h4,
+.rich-text strong {
+  color: #141414;
+  font-weight: 700;
+}
+
+.rich-text h2,
+.rich-text h3,
+.rich-text h4 {
+  margin: 1.1rem 0 0.5rem;
+  font-size: 15px;
+}
+
+.rich-text img {
+  max-width: 100%;
+  height: auto;
+  margin: 0.75rem 0;
+}
+
+.rich-text a {
+  text-decoration: underline;
 }
 
 a:focus-visible,
@@ -34,6 +112,6 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid #c7ff4d;
+  outline: 2px solid #141414;
   outline-offset: 2px;
 }

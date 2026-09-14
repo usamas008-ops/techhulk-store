@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { categoryFromTitle } from "@/lib/categories";
 
 function slugify(text: string) {
   return text
@@ -8,14 +9,6 @@ function slugify(text: string) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
-}
-
-// Shopify public products.json returns tags as an array; the Admin API
-// returns a comma-separated string. Support both so category never throws.
-function firstTag(tags: unknown): string {
-  if (Array.isArray(tags)) return String(tags[0] ?? "").trim();
-  if (typeof tags === "string") return tags.split(",")[0].trim();
-  return "";
 }
 
 function absoluteImage(src?: string | null) {
@@ -102,7 +95,7 @@ export async function POST() {
         handle,
         title: sp.title,
         description: sp.body_html || "",
-        category: sp.product_type || firstTag(sp.tags),
+        category: categoryFromTitle(sp.title, sp.product_type),
         image_url: images[0] || null,
         images,
         price,

@@ -15,9 +15,7 @@ export default function AddToCartForm({
   const { addItem } = useCart();
   const router = useRouter();
   const hasVariants = variants.length > 0;
-  const [variantId, setVariantId] = useState(
-    hasVariants ? variants[0].id : ""
-  );
+  const [variantId, setVariantId] = useState(hasVariants ? variants[0].id : "");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
@@ -41,51 +39,88 @@ export default function AddToCartForm({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {hasVariants && (
         <div>
-          <label className="mb-1 block text-sm text-muted">Variant</label>
-          <select
-            value={variantId}
-            onChange={(e) => setVariantId(e.target.value)}
-            className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
-          >
-            {variants.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.title} — Rs. {v.price.toLocaleString()}
-              </option>
-            ))}
-          </select>
+          <p className="eyebrow text-slate">Choose option</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {variants.map((variant) => {
+              const isActive = variant.id === variantId;
+              return (
+                <button
+                  key={variant.id}
+                  type="button"
+                  onClick={() => setVariantId(variant.id)}
+                  className={[
+                    "rounded-full border px-4 py-2 text-[12px] font-semibold transition-colors",
+                    isActive
+                      ? "border-night bg-night text-white"
+                      : "border-hair bg-card text-graphite hover:border-slate",
+                  ].join(" ")}
+                >
+                  {variant.title}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      <div>
-        <label className="mb-1 block text-sm text-muted">Quantity</label>
-        <input
-          type="number"
-          min={1}
-          value={quantity}
-          onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-          className="w-24 rounded-sm border border-line bg-ink px-3 py-2 text-paper"
-        />
+      <div className="flex flex-wrap items-end gap-5">
+        <div>
+          <p className="eyebrow text-slate">Quantity</p>
+          <div className="mt-3 flex items-center border border-hair bg-card">
+            <button
+              type="button"
+              aria-label="Decrease quantity"
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              className="px-3.5 py-2.5 text-[15px] font-semibold text-graphite transition-colors hover:text-night"
+            >
+              -
+            </button>
+            <input
+              type="number"
+              min={1}
+              value={quantity}
+              onChange={(e) =>
+                setQuantity(Math.max(1, Number(e.target.value) || 1))
+              }
+              className="w-14 border-x border-hair bg-card py-2.5 text-center text-[13px] font-semibold text-night"
+            />
+            <button
+              type="button"
+              aria-label="Increase quantity"
+              onClick={() => setQuantity(quantity + 1)}
+              className="px-3.5 py-2.5 text-[15px] font-semibold text-graphite transition-colors hover:text-night"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <p className="pb-3 text-[12px] text-slate">
+          {outOfStock ? "Out of stock" : `${stock} in stock`}
+        </p>
       </div>
 
       {outOfStock ? (
-        <p className="font-medium text-danger">Out of stock</p>
+        <p className="rounded-full bg-hair py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate">
+          Out of stock
+        </p>
       ) : (
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <button
             onClick={handleAdd}
-            className="rounded-sm bg-signal px-6 py-3 font-semibold text-ink transition-opacity hover:opacity-90"
+            className="flex-1 rounded-full border border-night px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.12em] text-night transition-colors hover:bg-night hover:text-white"
           >
-            {added ? "Added ✓" : "Add to cart"}
+            {added ? "Added to cart" : "Add to cart"}
           </button>
           <button
             onClick={() => {
               handleAdd();
               router.push("/cart");
             }}
-            className="rounded-sm border border-line px-6 py-3 font-semibold text-paper hover:border-signal"
+            className="flex-1 rounded-full bg-night px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-leaf"
           >
             Buy now
           </button>

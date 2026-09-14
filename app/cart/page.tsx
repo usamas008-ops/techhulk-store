@@ -9,13 +9,14 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="container-page py-16 text-center">
-        <h1 className="font-display text-2xl font-semibold text-paper">
-          Your cart is empty
-        </h1>
+      <div className="container-page py-20 text-center">
+        <h1 className="section-title">Your cart is empty</h1>
+        <p className="mt-3 text-[13px] text-slate">
+          Add a gadget and it will show up here.
+        </p>
         <Link
           href="/"
-          className="mt-4 inline-block rounded-sm bg-signal px-6 py-3 font-semibold text-ink"
+          className="mt-7 inline-block rounded-full bg-night px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-leaf"
         >
           Continue shopping
         </Link>
@@ -24,70 +25,128 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container-page grid gap-10 py-12 lg:grid-cols-[1fr_320px]">
-      <div className="space-y-4">
-        <h1 className="font-display text-2xl font-semibold text-paper">
+    <div className="container-page grid gap-8 py-10 lg:grid-cols-[1fr_340px]">
+      <div>
+        <h1 className="section-title mb-5 border-b border-hair pb-3">
           Your cart
         </h1>
-        {items.map((item) => (
-          <div
-            key={`${item.productId}-${item.variantId}`}
-            className="flex gap-4 rounded-md border border-line bg-panel p-4"
-          >
-            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-sm bg-ink">
-              {item.image && (
-                <Image src={item.image} alt={item.title} fill className="object-cover" />
-              )}
-            </div>
-            <div className="flex flex-1 flex-col justify-between">
-              <div>
-                <p className="text-paper">{item.title}</p>
-                {item.variantTitle && (
-                  <p className="text-sm text-muted">{item.variantTitle}</p>
+
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div
+              key={`${item.productId}-${item.variantId}`}
+              className="flex gap-4 border border-hair bg-card p-3.5"
+            >
+              <div className="relative h-24 w-24 shrink-0 overflow-hidden border border-hair bg-white">
+                {item.image && (
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    fill
+                    sizes="96px"
+                    className="object-contain p-1.5"
+                  />
                 )}
               </div>
-              <div className="flex items-center justify-between">
-                <input
-                  type="number"
-                  min={1}
-                  value={item.quantity}
-                  onChange={(e) =>
-                    setQuantity(
-                      item.productId,
-                      item.variantId,
-                      Math.max(1, Number(e.target.value))
-                    )
-                  }
-                  className="w-16 rounded-sm border border-line bg-ink px-2 py-1 text-paper"
-                />
-                <span className="font-semibold text-signal">
-                  Rs. {(item.price * item.quantity).toLocaleString()}
-                </span>
+
+              <div className="flex flex-1 flex-col justify-between gap-3">
+                <div>
+                  <p className="line-clamp-2 text-[13px] font-semibold text-night">
+                    {item.title}
+                  </p>
+                  {item.variantTitle && (
+                    <p className="mt-1 text-[12px] text-slate">
+                      {item.variantTitle}
+                    </p>
+                  )}
+                  <p className="mt-1 text-[12px] text-slate">
+                    Rs.{item.price.toLocaleString()} each
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center border border-hair">
+                    <button
+                      aria-label="Decrease quantity"
+                      onClick={() =>
+                        setQuantity(
+                          item.productId,
+                          item.variantId,
+                          Math.max(1, item.quantity - 1)
+                        )
+                      }
+                      className="px-3 py-1.5 text-[14px] font-semibold text-graphite transition-colors hover:text-night"
+                    >
+                      -
+                    </button>
+                    <span className="w-10 border-x border-hair py-1.5 text-center text-[12px] font-semibold text-night">
+                      {item.quantity}
+                    </span>
+                    <button
+                      aria-label="Increase quantity"
+                      onClick={() =>
+                        setQuantity(
+                          item.productId,
+                          item.variantId,
+                          item.quantity + 1
+                        )
+                      }
+                      className="px-3 py-1.5 text-[14px] font-semibold text-graphite transition-colors hover:text-night"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <span className="text-[15px] font-bold text-night">
+                    Rs.{(item.price * item.quantity).toLocaleString()}
+                  </span>
+                </div>
               </div>
+
+              <button
+                onClick={() => removeItem(item.productId, item.variantId)}
+                className="self-start text-[11px] font-bold uppercase tracking-[0.1em] text-slate transition-colors hover:text-sale"
+              >
+                Remove
+              </button>
             </div>
-            <button
-              onClick={() => removeItem(item.productId, item.variantId)}
-              className="self-start text-sm text-danger hover:underline"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      <div className="h-fit space-y-4 rounded-md border border-line bg-panel p-6">
-        <div className="flex justify-between text-paper">
+      <div className="h-fit border border-hair bg-card p-6">
+        <p className="eyebrow text-night">Order summary</p>
+
+        <div className="mt-4 flex justify-between text-[13px] text-graphite">
           <span>Subtotal</span>
-          <span className="font-semibold">Rs. {subtotal.toLocaleString()}</span>
+          <span className="font-semibold text-night">
+            Rs.{subtotal.toLocaleString()}
+          </span>
         </div>
-        <p className="text-sm text-muted">
-          Delivery charges calculated at checkout. Cash on Delivery only.
+        <div className="mt-2 flex justify-between text-[13px] text-graphite">
+          <span>Delivery</span>
+          <span className="font-semibold text-leaf">Free</span>
+        </div>
+        <div className="mt-4 flex justify-between border-t border-hair pt-4 text-[15px] font-bold text-night">
+          <span>Total</span>
+          <span>Rs.{subtotal.toLocaleString()}</span>
+        </div>
+
+        <p className="mt-3 text-[12px] leading-relaxed text-slate">
+          Cash on Delivery only. Pay the courier when your parcel arrives.
         </p>
+
         <Link
           href="/checkout"
-          className="block rounded-sm bg-signal px-6 py-3 text-center font-semibold text-ink hover:opacity-90"
+          className="mt-5 block rounded-full bg-night px-6 py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-leaf"
         >
           Proceed to checkout
+        </Link>
+        <Link
+          href="/"
+          className="mt-3 block text-center text-[11px] font-bold uppercase tracking-[0.1em] text-slate transition-colors hover:text-night"
+        >
+          Continue shopping
         </Link>
       </div>
     </div>
