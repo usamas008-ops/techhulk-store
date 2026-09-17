@@ -77,35 +77,42 @@ export default function Header() {
             Tech<span className="text-gold">Hulk</span>
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-1.5 md:flex" aria-label="Categories">
             {nav.map(({ slug, href, label, Icon }) => {
               const active = pathname === href || menu === slug;
               return (
                 <Link
                   key={href}
                   href={href}
+                  aria-label={label}
                   onMouseEnter={() => {
                     setSearchOpen(false);
                     setMenu(slug);
                   }}
                   onFocus={() => setMenu(slug)}
                   className={[
-                    "flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-colors",
+                    "flex h-11 w-11 items-center justify-center rounded-full transition-colors",
                     active ? "bg-white/15 text-white" : "text-white/80 hover:bg-white/10 hover:text-white",
                   ].join(" ")}
                 >
-                  <Icon size={19} />
-                  {label}
+                  <Icon size={22} />
                 </Link>
               );
             })}
+            <span className="mx-1.5 h-6 w-px bg-white/15" aria-hidden="true" />
             <Link
               href="/collections/all"
+              aria-label="Shop All"
+              title="Shop All"
               onMouseEnter={() => setMenu(null)}
-              className="ml-2 flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-white/10"
+              className={[
+                "flex h-11 w-11 items-center justify-center rounded-full transition-colors",
+                pathname === "/collections/all"
+                  ? "bg-white/15 text-white"
+                  : "text-white/80 hover:bg-white/10 hover:text-white",
+              ].join(" ")}
             >
-              <BagIcon size={19} />
-              Shop All
+              <BagIcon size={22} />
             </Link>
           </nav>
 
