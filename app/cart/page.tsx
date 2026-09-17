@@ -16,7 +16,7 @@ export default function CartPage() {
         </p>
         <Link
           href="/"
-          className="mt-7 inline-block rounded-full bg-night px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-leaf"
+          className="mt-7 btn-buy btn-buy-lg"
         >
           Continue shopping
         </Link>
@@ -35,9 +35,9 @@ export default function CartPage() {
           {items.map((item) => (
             <div
               key={`${item.productId}-${item.variantId}`}
-              className="flex gap-4 border border-hair bg-card p-3.5"
+              className="flex gap-4 rounded-[18px] bg-white p-3.5"
             >
-              <div className="relative h-24 w-24 shrink-0 overflow-hidden border border-hair bg-white">
+              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[14px] bg-[#f6f6f6]">
                 {item.image && (
                   <Image
                     src={item.image}
@@ -65,7 +65,7 @@ export default function CartPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center border border-hair">
+                  <div className="flex items-center overflow-hidden rounded-[10px] border border-[#dcdcdc]">
                     <button
                       aria-label="Decrease quantity"
                       onClick={() =>
@@ -114,7 +114,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      <div className="h-fit border border-hair bg-card p-6">
+      <div className="h-fit rounded-[24px] bg-white p-6">
         <p className="eyebrow text-night">Order summary</p>
 
         <div className="mt-4 flex justify-between text-[13px] text-graphite">
@@ -138,7 +138,7 @@ export default function CartPage() {
 
         <Link
           href="/checkout"
-          className="mt-5 block rounded-full bg-night px-6 py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-leaf"
+          className="mt-5 w-full btn-buy btn-buy-lg"
         >
           Proceed to checkout
         </Link>

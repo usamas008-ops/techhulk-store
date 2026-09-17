@@ -19,15 +19,15 @@ export default function CheckoutSuccessPage({
       </p>
 
       <div className="mx-auto mt-8 grid max-w-lg gap-3 text-left sm:grid-cols-3">
-        <div className="border border-hair bg-card p-4">
+        <div className="rounded-[18px] bg-white p-4">
           <p className="eyebrow text-slate">Step 1</p>
           <p className="mt-1 text-[12px] text-night">We call to confirm</p>
         </div>
-        <div className="border border-hair bg-card p-4">
+        <div className="rounded-[18px] bg-white p-4">
           <p className="eyebrow text-slate">Step 2</p>
           <p className="mt-1 text-[12px] text-night">Parcel is dispatched</p>
         </div>
-        <div className="border border-hair bg-card p-4">
+        <div className="rounded-[18px] bg-white p-4">
           <p className="eyebrow text-slate">Step 3</p>
           <p className="mt-1 text-[12px] text-night">Pay cash at the door</p>
         </div>
@@ -35,7 +35,7 @@ export default function CheckoutSuccessPage({
 
       <Link
         href="/"
-        className="mt-9 inline-block rounded-full bg-night px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-leaf"
+        className="mt-9 btn-buy btn-buy-lg"
       >
         Continue shopping
       </Link>

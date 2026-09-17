@@ -42,7 +42,9 @@ export default function AddToCartForm({
     <div className="space-y-6">
       {hasVariants && (
         <div>
-          <p className="eyebrow text-slate">Choose option</p>
+          <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-charcoal">
+            Choose option
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {variants.map((variant) => {
               const isActive = variant.id === variantId;
@@ -52,10 +54,10 @@ export default function AddToCartForm({
                   type="button"
                   onClick={() => setVariantId(variant.id)}
                   className={[
-                    "rounded-full border px-4 py-2 text-[12px] font-semibold transition-colors",
+                    "rounded-full border px-4 py-2 text-[12.5px] font-semibold transition-colors",
                     isActive
-                      ? "border-night bg-night text-white"
-                      : "border-hair bg-card text-graphite hover:border-slate",
+                      ? "border-onyx bg-onyx text-white"
+                      : "border-[#dcdcdc] bg-white text-charcoal hover:border-charcoal",
                   ].join(" ")}
                 >
                   {variant.title}
@@ -68,13 +70,15 @@ export default function AddToCartForm({
 
       <div className="flex flex-wrap items-end gap-5">
         <div>
-          <p className="eyebrow text-slate">Quantity</p>
-          <div className="mt-3 flex items-center border border-hair bg-card">
+          <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-charcoal">
+            Quantity
+          </p>
+          <div className="mt-3 flex items-center overflow-hidden rounded-[12px] border border-[#dcdcdc] bg-white">
             <button
               type="button"
               aria-label="Decrease quantity"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="px-3.5 py-2.5 text-[15px] font-semibold text-graphite transition-colors hover:text-night"
+              className="px-4 py-2.5 text-[16px] font-semibold text-charcoal transition-colors hover:bg-[#f3f2f2]"
             >
               -
             </button>
@@ -82,47 +86,47 @@ export default function AddToCartForm({
               type="number"
               min={1}
               value={quantity}
-              onChange={(e) =>
-                setQuantity(Math.max(1, Number(e.target.value) || 1))
-              }
-              className="w-14 border-x border-hair bg-card py-2.5 text-center text-[13px] font-semibold text-night"
+              onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+              className="w-14 border-x border-[#dcdcdc] bg-white py-2.5 text-center text-[14px] font-semibold text-onyx"
             />
             <button
               type="button"
               aria-label="Increase quantity"
               onClick={() => setQuantity(quantity + 1)}
-              className="px-3.5 py-2.5 text-[15px] font-semibold text-graphite transition-colors hover:text-night"
+              className="px-4 py-2.5 text-[16px] font-semibold text-charcoal transition-colors hover:bg-[#f3f2f2]"
             >
               +
             </button>
           </div>
         </div>
 
-        <p className="pb-3 text-[12px] text-slate">
+        <p className="pb-3 text-[12.5px] font-medium text-charcoal/70">
           {outOfStock ? "Out of stock" : `${stock} in stock`}
         </p>
       </div>
 
       {outOfStock ? (
-        <p className="rounded-full bg-hair py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate">
+        <p className="rounded-[12px] bg-[#ececec] py-4 text-center text-[13px] font-bold uppercase tracking-[0.08em] text-charcoal/60">
           Out of stock
         </p>
       ) : (
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
+            type="button"
             onClick={handleAdd}
-            className="flex-1 rounded-full border border-night px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.12em] text-night transition-colors hover:bg-night hover:text-white"
+            className="flex-1 rounded-[12px] border-2 border-onyx px-7 py-3.5 text-[13px] font-bold uppercase tracking-[0.06em] text-onyx transition-colors hover:bg-onyx hover:text-white"
           >
             {added ? "Added to cart" : "Add to cart"}
           </button>
           <button
+            type="button"
             onClick={() => {
               handleAdd();
               router.push("/cart");
             }}
-            className="flex-1 rounded-full bg-night px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-leaf"
+            className="btn-buy btn-buy-lg flex-1"
           >
-            Buy now
+            Buy Now
           </button>
         </div>
       )}

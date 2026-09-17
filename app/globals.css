@@ -2,34 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --font-display: "Space Grotesk", sans-serif;
-  --font-body: "Inter", sans-serif;
-}
-
 html {
   scroll-behavior: smooth;
 }
 
 body {
   background-color: #f0f0f0;
-  color: #3d3d3d;
+  color: #464646;
 }
 
 ::selection {
-  background-color: #141414;
+  background-color: #111111;
   color: #ffffff;
 }
 
 .container-page {
-  max-width: 1240px;
+  max-width: 1440px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 
-/* Small uppercase label used above headings and on cards. */
+@media (min-width: 640px) {
+  .container-page {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-page {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
 .eyebrow {
   font-size: 11px;
   font-weight: 600;
@@ -37,18 +45,187 @@ body {
   text-transform: uppercase;
 }
 
-/* Uppercase section heading, ruled underneath. */
+/* Section headings: uppercase, bold, lightly tracked, like ronin.pk. */
+.ronin-title,
 .section-title {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
   text-transform: uppercase;
-  color: #141414;
+  color: #464646;
 }
 
 @media (min-width: 640px) {
+  .ronin-title,
   .section-title {
-    font-size: 24px;
+    font-size: 25px;
+  }
+}
+
+/* Soft pill button, used for "View All". */
+.btn-soft {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  border-radius: 25px;
+  background-color: #f3f2f2;
+  padding: 11px 26px;
+  font-size: 14px;
+  color: #464646;
+  box-shadow: 4px 4.6px 10px rgba(0, 0, 0, 0.07), -4px -4px 10px rgba(255, 255, 255, 0.9);
+  transition: box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.btn-soft:hover {
+  color: #111111;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1), -2px -2px 6px rgba(255, 255, 255, 0.9);
+}
+
+.btn-soft-active {
+  background-color: #111111;
+  color: #ffffff;
+}
+
+.btn-soft-active:hover {
+  color: #ffffff;
+}
+
+/* Blue gradient "Buy Now" button. */
+.btn-buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: 8px;
+  background-image: linear-gradient(217.76deg, #1e51ee -40%, #9db2ff 190%);
+  padding: 7px 12px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #ffffff;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.btn-buy:hover,
+.group:hover .btn-buy {
+  filter: brightness(1.08) saturate(1.1);
+}
+
+.btn-buy-lg {
+  padding: 15px 28px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Gold pill, used on promo banners. */
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  border-radius: 999px;
+  background-image: linear-gradient(180deg, #f6dfa2 0%, #c99a45 100%);
+  padding: 11px 24px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2b1c0b;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+}
+
+.text-gold-gradient {
+  background-image: linear-gradient(180deg, #f9e7b8 0%, #d6a955 55%, #a8762c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-ice-gradient {
+  background-image: linear-gradient(180deg, #ffffff 0%, #bcd0ff 60%, #7d9cf5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Vertical ribbon on the left edge of a product card. */
+.badge-vertical {
+  position: absolute;
+  left: 0;
+  top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 116px;
+  border-radius: 10px 0 0 10px;
+  background-image: linear-gradient(0deg, #03b1e6, #0354cd);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Page-coloured tab cut into the bottom-right of the hero banner. */
+.hero-notch {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background-color: #f0f0f0;
+  border-top-left-radius: 24px;
+  padding: 16px 26px 12px 30px;
+}
+
+.hero-notch::before,
+.hero-notch::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: radial-gradient(circle at top left, transparent 23.5px, #f0f0f0 24px);
+}
+
+.hero-notch::before {
+  right: 0;
+  top: -24px;
+}
+
+.hero-notch::after {
+  left: -24px;
+  bottom: 0;
+}
+
+.carousel-arrow {
+  position: absolute;
+  top: 34%;
+  z-index: 10;
+  display: none;
+  height: 50px;
+  width: 50px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.75);
+  color: #111111;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(6px);
+  transition: background-color 0.2s ease;
+}
+
+.carousel-arrow:hover {
+  background-color: #ffffff;
+}
+
+@media (min-width: 768px) {
+  .carousel-arrow {
+    display: flex;
   }
 }
 
@@ -86,7 +263,7 @@ body {
 .rich-text h3,
 .rich-text h4,
 .rich-text strong {
-  color: #141414;
+  color: #111111;
   font-weight: 700;
 }
 
@@ -101,6 +278,7 @@ body {
   max-width: 100%;
   height: auto;
   margin: 0.75rem 0;
+  border-radius: 12px;
 }
 
 .rich-text a {
@@ -112,6 +290,6 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid #141414;
+  outline: 2px solid #1e51ee;
   outline-offset: 2px;
 }

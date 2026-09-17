@@ -1,89 +1,179 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-context";
-import { NAV_CATEGORIES, categoryLabel } from "@/lib/categories";
+import { MegaMenu, SearchPanel, useCatalog } from "@/components/HeaderPanels";
+import {
+  BagIcon,
+  CartIcon,
+  CloseIcon,
+  EarbudsIcon,
+  MenuIcon,
+  PlugIcon,
+  SearchIcon,
+  WatchIcon,
+} from "@/components/icons";
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  ...NAV_CATEGORIES.map((slug) => ({
-    href: `/?category=${slug}`,
-    label: categoryLabel(slug),
-  })),
+const nav = [
+  { slug: "watches", href: "/collections/watches", label: "Watches", Icon: WatchIcon },
+  { slug: "earbuds", href: "/collections/earbuds", label: "Earbuds", Icon: EarbudsIcon },
+  { slug: "chargers", href: "/collections/chargers", label: "Chargers", Icon: PlugIcon },
 ];
 
+// Transparent inside the home hero, a dark rounded bar once the page scrolls,
+// a panel opens, or on any other page. The home hero pulls up by 76px.
 export default function Header() {
+  const pathname = usePathname();
   const { count } = useCart();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [menu, setMenu] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const catalog = useCatalog(Boolean(menu) || searchOpen);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 30);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+    setMenu(null);
+    setSearchOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMenu(null);
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const closePanels = () => {
+    setMenu(null);
+    setSearchOpen(false);
+  };
+
+  const overHero = pathname === "/" && !scrolled && !mobileOpen && !menu && !searchOpen;
 
   return (
-    <header className="sticky top-0 z-50">
-      <div className="bg-night text-white">
-        <div className="container-page flex h-9 items-center justify-center gap-3 text-[10px] font-semibold uppercase tracking-[0.14em] sm:text-[11px]">
-          <span>Cash on Delivery across Pakistan</span>
-          <span className="hidden text-white/30 sm:inline">/</span>
-          <span className="hidden sm:inline">Free delivery on every order</span>
-        </div>
-      </div>
-
-      <div className="border-b border-hair bg-card/95 backdrop-blur">
-        <div className="container-page flex h-16 items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="font-display text-[22px] font-bold tracking-tight text-night"
-          >
-            Tech<span className="text-leaf">Hulk</span>
+    <header className="sticky top-0 z-50 px-3 pt-2 sm:px-5 lg:px-8" onMouseLeave={() => setMenu(null)}>
+      <div
+        className={[
+          "mx-auto max-w-[1376px] rounded-[20px] transition-[background-color,box-shadow] duration-300",
+          overHero ? "bg-transparent" : "bg-onyx/95 shadow-[0_12px_30px_rgba(0,0,0,0.18)] backdrop-blur",
+        ].join(" ")}
+      >
+        <div className="flex h-[68px] items-center justify-between gap-4 px-4 sm:px-7">
+          <Link href="/" className="font-display text-[22px] font-bold tracking-tight text-white sm:text-[24px]">
+            Tech<span className="text-gold">Hulk</span>
           </Link>
 
-          <nav className="hidden items-center gap-8 md:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-[12px] font-bold uppercase tracking-[0.1em] text-graphite transition-colors hover:text-night"
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="hidden items-center gap-1 md:flex">
+            {nav.map(({ slug, href, label, Icon }) => {
+              const active = pathname === href || menu === slug;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onMouseEnter={() => {
+                    setSearchOpen(false);
+                    setMenu(slug);
+                  }}
+                  onFocus={() => setMenu(slug)}
+                  className={[
+                    "flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-colors",
+                    active ? "bg-white/15 text-white" : "text-white/80 hover:bg-white/10 hover:text-white",
+                  ].join(" ")}
+                >
+                  <Icon size={19} />
+                  {label}
+                </Link>
+              );
+            })}
+            <Link
+              href="/collections/all"
+              onMouseEnter={() => setMenu(null)}
+              className="ml-2 flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-white/10"
+            >
+              <BagIcon size={19} />
+              Shop All
+            </Link>
           </nav>
 
-          <Link
-            href="/cart"
-            className="flex items-center gap-2 rounded-full bg-night px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-graphite"
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label={searchOpen ? "Close search" : "Search products"}
+              aria-expanded={searchOpen}
+              onClick={() => {
+                setMenu(null);
+                setMobileOpen(false);
+                setSearchOpen((value) => !value);
+              }}
+              className="rounded-full p-2.5 text-white/85 transition-colors hover:bg-white/10 hover:text-white"
             >
-              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-              <path d="M3 6h18" />
-              <path d="M16 10a4 4 0 0 1-8 0" />
-            </svg>
-            Cart
-            <span className="rounded-full bg-white/20 px-2 py-0.5 leading-none">
-              {count}
-            </span>
-          </Link>
+              {searchOpen ? <CloseIcon size={20} /> : <SearchIcon size={20} />}
+            </button>
+            <Link
+              href="/cart"
+              aria-label={`Cart, ${count} items`}
+              className="relative rounded-full p-2.5 text-white transition-colors hover:bg-white/10"
+            >
+              <CartIcon size={21} />
+              {count > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-sale px-1 text-[10px] font-bold leading-none text-white">
+                  {count}
+                </span>
+              )}
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                closePanels();
+                setMobileOpen((value) => !value);
+              }}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+              className="rounded-full p-2.5 text-white transition-colors hover:bg-white/10 md:hidden"
+            >
+              {mobileOpen ? <CloseIcon size={22} /> : <MenuIcon size={22} />}
+            </button>
+          </div>
         </div>
 
-        <div className="no-scrollbar flex items-center gap-5 overflow-x-auto border-t border-hair px-4 pb-2.5 pt-2 md:hidden">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.1em] text-graphite"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
+        {mobileOpen && (
+          <nav className="border-t border-white/10 px-3 pb-4 pt-2 md:hidden">
+            {[...nav, { slug: "all", href: "/collections/all", label: "Shop All", Icon: BagIcon }].map(
+              ({ href, label, Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-[14px] font-medium text-white/90 transition-colors hover:bg-white/10"
+                >
+                  <Icon size={20} />
+                  {label}
+                </Link>
+              )
+            )}
+          </nav>
+        )}
       </div>
+
+      {menu && (
+        <div className="hidden md:block">
+          <MegaMenu slug={menu} catalog={catalog} onClose={closePanels} />
+        </div>
+      )}
+      {searchOpen && <SearchPanel catalog={catalog} onClose={closePanels} />}
     </header>
   );
 }

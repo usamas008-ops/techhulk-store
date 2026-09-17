@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import AddToCartForm from "@/components/AddToCartForm";
-import ProductCard from "@/components/ProductCard";
-import { categoryLabel } from "@/lib/categories";
+import ProductCarousel from "@/components/ProductCarousel";
+import { CashIcon, PhoneIcon, TruckIcon } from "@/components/icons";
+import { createClient } from "@/lib/supabase/server";
+import { categoryLabel, collectionHref } from "@/lib/categories";
+import { cardNote, countVariants, discountPercent } from "@/lib/product-meta";
 import type { Product, ProductVariant } from "@/lib/types";
 
 export const revalidate = 60;
@@ -24,47 +26,50 @@ export default async function ProductPage({
     .single();
 
   if (!product) notFound();
-
   const p = product as Product;
 
-  const { data: variantRows } = await supabase
-    .from("product_variants")
-    .select("*")
-    .eq("product_id", p.id)
-    .order("price", { ascending: true });
+  const [{ data: variantRows }, { data: allVariantRows }, { data: relatedRows }] =
+    await Promise.all([
+      supabase
+        .from("product_variants")
+        .select("*")
+        .eq("product_id", p.id)
+        .order("price", { ascending: true }),
+      supabase.from("product_variants").select("product_id"),
+      p.category
+        ? supabase
+            .from("products")
+            .select("*")
+            .eq("is_active", true)
+            .eq("category", p.category)
+            .neq("id", p.id)
+            .limit(10)
+        : Promise.resolve({ data: [] as Product[] }),
+    ]);
 
-  let related: Product[] = [];
-  if (p.category) {
-    const { data: relatedRows } = await supabase
-      .from("products")
-      .select("*")
-      .eq("is_active", true)
-      .eq("category", p.category)
-      .neq("id", p.id)
-      .limit(4);
-    related = (relatedRows as Product[]) || [];
-  }
+  const related = (relatedRows as Product[]) || [];
+  const variantCounts = countVariants(allVariantRows as { product_id: string }[] | null);
+  const notes = Object.fromEntries(
+    related.map((item) => [item.id, cardNote(item, variantCounts[item.id] || 0)])
+  );
 
   const gallery = p.images?.length ? p.images : p.image_url ? [p.image_url] : [];
+  const off = discountPercent(p);
   const compareAt = p.compare_at_price;
-  const onSale = Boolean(compareAt && compareAt > p.price);
-  const off = onSale
-    ? Math.round((1 - p.price / (compareAt as number)) * 100)
-    : 0;
 
   return (
     <div>
-      <div className="container-page pt-6">
-        <p className="eyebrow text-slate">
-          <Link href="/" className="transition-colors hover:text-night">
+      <div className="container-page pt-7">
+        <p className="text-[12px] font-medium text-steel">
+          <Link href="/" className="transition-colors hover:text-charcoal">
             Home
           </Link>
           {p.category && (
             <>
-              {" / "}
+              <span className="mx-2">/</span>
               <Link
-                href={`/?category=${p.category}`}
-                className="transition-colors hover:text-night"
+                href={collectionHref(p.category)}
+                className="transition-colors hover:text-charcoal"
               >
                 {categoryLabel(p.category)}
               </Link>
@@ -73,25 +78,25 @@ export default async function ProductPage({
         </p>
       </div>
 
-      <div className="container-page grid gap-10 py-7 lg:grid-cols-2">
+      <div className="container-page grid gap-8 py-6 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
         <div className="space-y-3">
-          <div className="relative aspect-square overflow-hidden border border-hair bg-white">
+          <div className="relative aspect-square overflow-hidden rounded-[24px] bg-white">
             {gallery[0] ? (
               <Image
                 src={gallery[0]}
                 alt={p.title}
                 fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-contain p-6"
+                sizes="(max-width: 1024px) 100vw, 55vw"
+                className="object-contain p-6 sm:p-10"
                 priority
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-[13px] text-slate">
+              <div className="flex h-full items-center justify-center text-[13px] text-charcoal/60">
                 No image
               </div>
             )}
-            {onSale && off > 0 && (
-              <span className="absolute left-0 top-4 bg-sale px-3 py-1.5 text-[12px] font-bold text-white">
+            {off > 0 && (
+              <span className="absolute left-5 top-5 rounded-full bg-sale px-3.5 py-1.5 text-[13px] font-bold text-white">
                 -{off}%
               </span>
             )}
@@ -102,64 +107,69 @@ export default async function ProductPage({
               {gallery.slice(1, 5).map((src, index) => (
                 <div
                   key={index}
-                  className="relative aspect-square overflow-hidden border border-hair bg-white"
+                  className="relative aspect-square overflow-hidden rounded-[14px] bg-white"
                 >
-                  <Image
-                    src={src}
-                    alt=""
-                    fill
-                    sizes="120px"
-                    className="object-contain p-2"
-                  />
+                  <Image src={src} alt="" fill sizes="140px" className="object-contain p-2" />
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div>
+        <div className="lg:pt-4">
           {p.category && (
-            <p className="eyebrow text-slate">{categoryLabel(p.category)}</p>
+            <span className="inline-block rounded-full bg-gradient-to-r from-[#03b1e6] to-[#0354cd] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+              {categoryLabel(p.category)}
+            </span>
           )}
 
-          <h1 className="mt-2 font-display text-[26px] font-bold leading-tight text-night sm:text-[32px]">
+          <h1 className="mt-3 text-[24px] font-bold uppercase leading-tight text-charcoal sm:text-[32px]">
             {p.title}
           </h1>
 
-          <div className="mt-4 flex flex-wrap items-baseline gap-3">
-            <span className="text-[26px] font-bold text-night">
+          <div className="mt-5 flex flex-wrap items-baseline gap-3">
+            <span className="text-[28px] font-black text-onyx">
               Rs.{p.price.toLocaleString()}
             </span>
-            {onSale && (
-              <span className="text-[15px] text-slate line-through">
-                Rs.{(compareAt as number).toLocaleString()}
-              </span>
-            )}
-            {onSale && off > 0 && (
-              <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-sale">
-                Save Rs.{((compareAt as number) - p.price).toLocaleString()}
-              </span>
+            {off > 0 && compareAt && (
+              <>
+                <span className="text-[16px] font-semibold text-charcoal/60 line-through">
+                  Rs.{compareAt.toLocaleString()}
+                </span>
+                <span className="rounded-full bg-[#fde8ea] px-3 py-1 text-[12px] font-bold text-sale">
+                  Save Rs.{(compareAt - p.price).toLocaleString()}
+                </span>
+              </>
             )}
           </div>
 
-          <div className="mt-6 border-t border-hair pt-6">
-            <AddToCartForm
-              product={p}
-              variants={(variantRows as ProductVariant[]) || []}
-            />
+          <div className="mt-7 rounded-[24px] bg-white p-5 sm:p-7">
+            <AddToCartForm product={p} variants={(variantRows as ProductVariant[]) || []} />
           </div>
 
-          <ul className="mt-7 space-y-2 border-t border-hair pt-6 text-[13px] text-slate">
-            <li>Cash on Delivery anywhere in Pakistan.</li>
-            <li>Free delivery, no hidden charges at the door.</li>
-            <li>We call you to confirm before dispatch.</li>
-          </ul>
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            {[
+              { icon: <CashIcon size={26} />, text: "Cash on Delivery" },
+              { icon: <TruckIcon size={26} />, text: "Free Delivery" },
+              { icon: <PhoneIcon size={24} />, text: "Confirmation Call" },
+            ].map((item) => (
+              <div
+                key={item.text}
+                className="flex flex-col items-center gap-2 rounded-[18px] bg-[#f3f2f2] px-2 py-4 text-center text-[11.5px] font-semibold text-charcoal shadow-[4px_4px_10px_rgba(0,0,0,0.06),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+              >
+                {item.icon}
+                {item.text}
+              </div>
+            ))}
+          </div>
 
           {p.description && (
-            <div className="mt-7 border-t border-hair pt-6">
-              <p className="eyebrow mb-3 text-night">Product details</p>
+            <div className="mt-5 rounded-[24px] bg-white p-5 sm:p-7">
+              <p className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-charcoal">
+                Product Details
+              </p>
               <div
-                className="rich-text text-[13px] leading-relaxed text-slate"
+                className="rich-text text-[13px] leading-relaxed text-charcoal/80"
                 dangerouslySetInnerHTML={{ __html: p.description }}
               />
             </div>
@@ -167,17 +177,13 @@ export default async function ProductPage({
         </div>
       </div>
 
-      {related.length > 0 && (
-        <div className="container-page py-10">
-          <div className="mb-5 border-b border-hair pb-3">
-            <h2 className="section-title">More {categoryLabel(p.category)}</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-            {related.map((item) => (
-              <ProductCard key={item.id} product={item} />
-            ))}
-          </div>
-        </div>
+      {p.category && related.length > 0 && (
+        <ProductCarousel
+          title={`More ${categoryLabel(p.category)}`}
+          href={collectionHref(p.category)}
+          products={related}
+          notes={notes}
+        />
       )}
     </div>
   );

@@ -67,3 +67,8 @@ export function categoryFromTitle(
   if (/charger|adapter|\bgan\b|\bcable\b/.test(text)) return "chargers";
   return "accessories";
 }
+
+/** Storefront URL for a category slug, or "all" for the full catalog. */
+export function collectionHref(slug: string): string {
+  return `/collections/${encodeURIComponent(slug)}`;
+}

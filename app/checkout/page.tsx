@@ -63,7 +63,7 @@ export default function CheckoutPage() {
   };
 
   const inputClass =
-    "w-full border border-hair bg-card px-3.5 py-2.5 text-[13px] text-night placeholder:text-slate/60";
+    "w-full rounded-[12px] border border-[#dcdcdc] bg-white px-4 py-3 text-[14px] text-onyx placeholder:text-charcoal/40";
 
   return (
     <div className="container-page grid gap-8 py-10 lg:grid-cols-[1fr_340px]">
@@ -100,7 +100,7 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <div className="mt-5 border border-hair bg-card p-4">
+        <div className="mt-5 rounded-[18px] bg-white p-5">
           <p className="eyebrow text-slate">Payment method</p>
           <p className="mt-1 text-[13px] font-semibold text-night">
             Cash on Delivery
@@ -112,7 +112,7 @@ export default function CheckoutPage() {
         </div>
 
         {error && (
-          <p className="mt-4 border border-sale/30 bg-sale/5 px-4 py-3 text-[13px] text-sale">
+          <p className="mt-4 rounded-[12px] border border-sale/30 bg-sale/5 px-4 py-3 text-[13px] text-sale">
             {error}
           </p>
         )}
@@ -120,13 +120,13 @@ export default function CheckoutPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-5 w-full rounded-full bg-night px-6 py-4 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-leaf disabled:opacity-50"
+          className="mt-5 w-full btn-buy btn-buy-lg disabled:opacity-50"
         >
           {submitting ? "Placing order..." : "Place order, pay on delivery"}
         </button>
       </form>
 
-      <div className="h-fit border border-hair bg-card p-6">
+      <div className="h-fit rounded-[24px] bg-white p-6">
         <p className="eyebrow text-night">Order summary</p>
 
         <div className="mt-4 space-y-3">

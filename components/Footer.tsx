@@ -1,56 +1,71 @@
 import Link from "next/link";
-import { NAV_CATEGORIES, categoryLabel } from "@/lib/categories";
+import { NAV_CATEGORIES, categoryLabel, collectionHref } from "@/lib/categories";
+import { SUPPORT } from "@/lib/placeholders";
 
 export default function Footer() {
-  return (
-    <footer className="mt-16 border-t border-hair bg-card">
-      <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="lg:col-span-2">
-          <p className="font-display text-[22px] font-bold text-night">
-            Tech<span className="text-leaf">Hulk</span>
-          </p>
-          <p className="mt-3 max-w-sm text-[13px] leading-relaxed text-slate">
-            Smartwatches, earbuds and fast chargers, delivered anywhere in
-            Pakistan. You pay in cash once the parcel reaches your door.
-          </p>
-        </div>
+  const whatsapp = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "").replace(/[^0-9]/g, "");
 
-        <div>
-          <p className="eyebrow text-night">Shop</p>
-          <ul className="mt-4 space-y-2 text-[13px] text-slate">
-            <li>
-              <Link href="/" className="transition-colors hover:text-night">
-                All products
-              </Link>
-            </li>
-            {NAV_CATEGORIES.map((slug) => (
-              <li key={slug}>
-                <Link
-                  href={`/?category=${slug}`}
-                  className="transition-colors hover:text-night"
-                >
-                  {categoryLabel(slug)}
+  return (
+    <footer className="px-3 pb-6 pt-10 sm:px-5 lg:px-8">
+      <div className="mx-auto max-w-[1376px] rounded-[24px] bg-white px-6 py-10 sm:px-12">
+        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
+          <div>
+            <p className="font-display text-[24px] font-bold text-onyx">
+              Tech<span className="text-gold">Hulk</span>
+            </p>
+            <p className="mt-4 text-[20px] font-bold text-charcoal">We&apos;re here to help.</p>
+            <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-charcoal/75">
+              Order online any time. We call you to confirm every order, and
+              you pay in cash when the parcel reaches your door.
+            </p>
+            <p className="mt-4 text-[14px] font-semibold text-charcoal">Call Us: {SUPPORT.phone}</p>
+            <p className="mt-1 text-[14px] font-semibold text-charcoal">Email Us: {SUPPORT.email}</p>
+            {whatsapp && (
+              <a
+                href={`https://wa.me/${whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-block text-[13px] font-semibold text-charcoal underline-offset-4 hover:underline"
+              >
+                WhatsApp us: +{whatsapp}
+              </a>
+            )}
+          </div>
+
+          <div>
+            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-charcoal">Shop</p>
+            <ul className="mt-4 space-y-2.5 text-[13px] text-charcoal/75">
+              {NAV_CATEGORIES.map((slug) => (
+                <li key={slug}>
+                  <Link href={collectionHref(slug)} className="transition-colors hover:text-onyx">
+                    {categoryLabel(slug)}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link href={collectionHref("all")} className="transition-colors hover:text-onyx">
+                  All Products
                 </Link>
               </li>
-            ))}
-          </ul>
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-charcoal">
+              How it works
+            </p>
+            <ol className="mt-4 space-y-2.5 text-[13px] text-charcoal/75">
+              <li>1. Add products to your cart</li>
+              <li>2. Enter name, phone and address</li>
+              <li>3. We call to confirm the order</li>
+              <li>4. Pay cash when it arrives</li>
+            </ol>
+          </div>
         </div>
 
-        <div>
-          <p className="eyebrow text-night">How it works</p>
-          <ol className="mt-4 space-y-2 text-[13px] text-slate">
-            <li>1. Add what you need to the cart.</li>
-            <li>2. Enter your name, phone and address.</li>
-            <li>3. We call you to confirm the order.</li>
-            <li>4. Pay cash when it arrives.</li>
-          </ol>
-        </div>
-      </div>
-
-      <div className="border-t border-hair">
-        <div className="container-page flex flex-col gap-2 py-5 text-[12px] text-slate sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} TechHulk. All rights reserved.</p>
-          <p>Cash on Delivery only. All prices in PKR.</p>
+        <div className="mt-10 flex flex-col gap-2 border-t border-[#ececec] pt-6 text-[12px] text-charcoal/65 sm:flex-row sm:items-center sm:justify-between">
+          <p>&copy; {new Date().getFullYear()} TechHulk. All Rights Reserved.</p>
+          <p>Cash on Delivery across Pakistan. All prices in PKR.</p>
         </div>
       </div>
     </footer>
