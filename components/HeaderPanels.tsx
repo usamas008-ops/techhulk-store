@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { categoryLabel, collectionHref } from "@/lib/categories";
+import { collectionHref } from "@/lib/categories";
 import { SearchIcon } from "@/components/icons";
 
 export type MenuProduct = {
@@ -62,10 +62,12 @@ const panel =
 
 export function MegaMenu({
   slug,
+  name,
   catalog,
   onClose,
 }: {
   slug: string;
+  name: string;
   catalog: MenuProduct[] | null;
   onClose: () => void;
 }) {
@@ -76,7 +78,7 @@ export function MegaMenu({
       <div className="flex gap-8">
         <div className="w-44 shrink-0">
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-steel">Shop</p>
-          <p className="mt-1 text-[22px] font-bold text-onyx">{categoryLabel(slug)}</p>
+          <p className="mt-1 text-[22px] font-bold text-onyx">{name}</p>
           <Link href={collectionHref(slug)} onClick={onClose} className="btn-soft mt-5">
             View All
           </Link>

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { NAV_CATEGORIES, categoryLabel, collectionHref } from "@/lib/categories";
+import { collectionHref } from "@/lib/categories";
 import { SUPPORT } from "@/lib/placeholders";
 
-export default function Footer() {
+export default function Footer({ menu }: { menu: { slug: string; name: string }[] }) {
   const whatsapp = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "").replace(/[^0-9]/g, "");
 
   return (
@@ -35,10 +35,10 @@ export default function Footer() {
           <div>
             <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-charcoal">Shop</p>
             <ul className="mt-4 space-y-2.5 text-[13px] text-charcoal/75">
-              {NAV_CATEGORIES.map((slug) => (
-                <li key={slug}>
-                  <Link href={collectionHref(slug)} className="transition-colors hover:text-onyx">
-                    {categoryLabel(slug)}
+              {menu.map((category) => (
+                <li key={category.slug}>
+                  <Link href={collectionHref(category.slug)} className="transition-colors hover:text-onyx">
+                    {category.name}
                   </Link>
                 </li>
               ))}

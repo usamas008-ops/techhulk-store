@@ -9,13 +9,15 @@ import type { Product } from "@/lib/types";
 export default function ProductCard({
   product,
   note,
+  categoryName,
 }: {
   product: Product;
   note?: string;
+  categoryName?: string;
 }) {
   const off = discountPercent(product);
   const compareAt = product.compare_at_price;
-  const ribbon = product.category ? categoryLabel(product.category) : "TechHulk";
+  const ribbon = categoryName || (product.category ? categoryLabel(product.category) : "TechHulk");
 
   return (
     <Link href={`/products/${product.handle}`} className="group relative block pl-[18px]">

@@ -7,24 +7,37 @@ import { useCart } from "@/lib/cart-context";
 import { MegaMenu, SearchPanel, useCatalog } from "@/components/HeaderPanels";
 import {
   BagIcon,
+  BatteryIcon,
   CartIcon,
   CloseIcon,
   EarbudsIcon,
+  GridIcon,
   MenuIcon,
   PlugIcon,
   SearchIcon,
   WatchIcon,
 } from "@/components/icons";
+import { collectionHref } from "@/lib/categories";
 
-const nav = [
-  { slug: "watches", href: "/collections/watches", label: "Watches", Icon: WatchIcon },
-  { slug: "earbuds", href: "/collections/earbuds", label: "Earbuds", Icon: EarbudsIcon },
-  { slug: "chargers", href: "/collections/chargers", label: "Chargers", Icon: PlugIcon },
-];
+type MenuCategory = { slug: string; name: string };
+
+// Known categories get their own icon; any new one from the admin gets a grid.
+const ICONS: Record<string, typeof GridIcon> = {
+  watches: WatchIcon,
+  earbuds: EarbudsIcon,
+  chargers: PlugIcon,
+  powerbanks: BatteryIcon,
+};
 
 // Transparent inside the home hero, a dark rounded bar once the page scrolls,
 // a panel opens, or on any other page. The home hero pulls up by 76px.
-export default function Header() {
+export default function Header({ categories }: { categories: MenuCategory[] }) {
+  const nav = categories.map((category) => ({
+    slug: category.slug,
+    href: collectionHref(category.slug),
+    label: category.name,
+    Icon: ICONS[category.slug] ?? GridIcon,
+  }));
   const pathname = usePathname();
   const { count } = useCart();
   const [scrolled, setScrolled] = useState(false);
@@ -177,7 +190,12 @@ export default function Header() {
 
       {menu && (
         <div className="hidden md:block">
-          <MegaMenu slug={menu} catalog={catalog} onClose={closePanels} />
+          <MegaMenu
+            slug={menu}
+            name={nav.find((item) => item.slug === menu)?.label ?? menu}
+            catalog={catalog}
+            onClose={closePanels}
+          />
         </div>
       )}
       {searchOpen && <SearchPanel catalog={catalog} onClose={closePanels} />}

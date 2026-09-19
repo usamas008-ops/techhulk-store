@@ -128,3 +128,19 @@ export const ChevronRightIcon = (p: IconProps) => (
     <path d="m9 5 7 7-7 7" />
   </Svg>
 );
+
+export const BatteryIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3" y="7" width="16" height="10" rx="2" />
+    <path d="M21 10.5v3M7 10v4M10.5 10v4" />
+  </Svg>
+);
+
+export const GridIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+    <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+    <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+    <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+  </Svg>
+);

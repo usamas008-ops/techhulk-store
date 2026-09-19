@@ -1,24 +1,25 @@
 import Link from "next/link";
+import { collectionHref } from "@/lib/categories";
 
-const links = [
-  { href: "/collections/all", label: "Cash on Delivery", tone: "font-extrabold text-[#B8872F]" },
-  { href: "/collections/all", label: "Free Delivery Nationwide", tone: "font-extrabold text-[#15803D]" },
-  { href: "/collections/watches", label: "Smart Watches" },
-  { href: "/collections/earbuds", label: "Wireless Earbuds" },
-  { href: "/collections/chargers", label: "Fast Chargers" },
-  { href: "/collections/all", label: "Shop All" },
-  { href: "/cart", label: "Your Cart" },
-];
+type MenuCategory = { slug: string; name: string };
 
-export default function TopBar() {
+export default function TopBar({ menu }: { menu: MenuCategory[] }) {
+  const links = [
+    { href: collectionHref("all"), label: "Cash on Delivery", tone: "font-extrabold text-[#B8872F]" },
+    { href: collectionHref("all"), label: "Free Delivery Nationwide", tone: "font-extrabold text-[#15803D]" },
+    ...menu.map((category) => ({ href: collectionHref(category.slug), label: category.name, tone: "" })),
+    { href: collectionHref("all"), label: "Shop All", tone: "" },
+    { href: "/cart", label: "Your Cart", tone: "" },
+  ];
+
   return (
     <div className="hidden md:block">
       <div className="container-page flex h-11 items-center justify-center gap-7 text-[12px] font-medium text-steel">
         {links.map((link) => (
           <Link
-            key={link.label}
+            key={`${link.href}-${link.label}`}
             href={link.href}
-            className={`whitespace-nowrap transition-colors hover:text-charcoal ${link.tone ?? ""}`}
+            className={`whitespace-nowrap transition-colors hover:text-charcoal ${link.tone}`}
           >
             {link.label}
           </Link>

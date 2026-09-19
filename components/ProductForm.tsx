@@ -2,6 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import DescriptionField from "@/components/DescriptionField";
+import ProductImagesField from "@/components/ProductImagesField";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Product } from "@/lib/types";
 
@@ -13,7 +16,16 @@ function slugify(text: string) {
     .replace(/(^-|-$)/g, "");
 }
 
-export default function ProductForm({ product }: { product?: Product }) {
+const inputClass = "w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper";
+const labelClass = "mb-1 block text-sm text-muted";
+
+export default function ProductForm({
+  product,
+  categories,
+}: {
+  product?: Product;
+  categories: { slug: string; name: string }[];
+}) {
   const router = useRouter();
   const supabase = createClient();
   const isEdit = Boolean(product);
@@ -23,14 +35,22 @@ export default function ProductForm({ product }: { product?: Product }) {
     handle: product?.handle || "",
     category: product?.category || "",
     description: product?.description || "",
-    image_url: product?.image_url || "",
     price: product?.price?.toString() || "",
     compare_at_price: product?.compare_at_price?.toString() || "",
     stock: product?.stock?.toString() || "0",
     is_active: product?.is_active ?? true,
   });
+  const [images, setImages] = useState<string[]>(
+    product?.images?.length ? product.images : product?.image_url ? [product.image_url] : []
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Keep an old free-text category selectable so editing never loses it.
+  const options =
+    form.category && !categories.some((c) => c.slug === form.category)
+      ? [...categories, { slug: form.category, name: form.category }]
+      : categories;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,15 +58,14 @@ export default function ProductForm({ product }: { product?: Product }) {
     setError("");
 
     const payload = {
-      title: form.title,
-      handle: form.handle || slugify(form.title),
+      title: form.title.trim(),
+      handle: slugify(form.handle) || slugify(form.title),
       category: form.category,
       description: form.description,
-      image_url: form.image_url || null,
+      image_url: images[0] || null,
+      images,
       price: Number(form.price) || 0,
-      compare_at_price: form.compare_at_price
-        ? Number(form.compare_at_price)
-        : null,
+      compare_at_price: form.compare_at_price ? Number(form.compare_at_price) : null,
       stock: Number(form.stock) || 0,
       is_active: form.is_active,
     };
@@ -56,7 +75,11 @@ export default function ProductForm({ product }: { product?: Product }) {
       : await supabase.from("products").insert(payload);
 
     if (error) {
-      setError(error.message);
+      setError(
+        /duplicate key/i.test(error.message)
+          ? "Another product already uses this URL handle. Change the handle and save again."
+          : error.message
+      );
       setSaving(false);
       return;
     }
@@ -66,93 +89,90 @@ export default function ProductForm({ product }: { product?: Product }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
+    <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
       <div>
-        <label className="mb-1 block text-sm text-muted">Title</label>
+        <label className={labelClass}>Title</label>
         <input
           required
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
+          className={inputClass}
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm text-muted">
-          Handle (URL slug — leave blank to auto-generate)
-        </label>
+        <label className={labelClass}>URL handle, leave blank to make one from the title</label>
         <input
           value={form.handle}
           onChange={(e) => setForm({ ...form, handle: e.target.value })}
           placeholder="e.g. air31-earbuds"
-          className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
+          className={inputClass}
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm text-muted">Category</label>
-        <input
+        <div className="flex items-baseline justify-between">
+          <label className={labelClass}>Category</label>
+          <Link href="/admin/categories" className="text-xs text-signal hover:underline">
+            Add or edit categories
+          </Link>
+        </div>
+        <select
+          required
           value={form.category}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
-          className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
-        />
+          className={inputClass}
+        >
+          <option value="">Choose a category</option>
+          {options.map((category) => (
+            <option key={category.slug} value={category.slug}>
+              {category.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <div>
-        <label className="mb-1 block text-sm text-muted">Image URL</label>
-        <input
-          value={form.image_url}
-          onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-          placeholder="https://..."
-          className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
-        />
-      </div>
+      <ProductImagesField images={images} onChange={setImages} />
 
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className="mb-1 block text-sm text-muted">Price (Rs.)</label>
+          <label className={labelClass}>Price (Rs.)</label>
           <input
             required
             type="number"
+            min={0}
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
-            className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
+            className={inputClass}
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-muted">
-            Compare-at price
-          </label>
+          <label className={labelClass}>Old price, shows a discount</label>
           <input
             type="number"
+            min={0}
             value={form.compare_at_price}
-            onChange={(e) =>
-              setForm({ ...form, compare_at_price: e.target.value })
-            }
-            className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
+            onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })}
+            className={inputClass}
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-muted">Stock</label>
+          <label className={labelClass}>Stock</label>
           <input
             required
             type="number"
+            min={0}
             value={form.stock}
             onChange={(e) => setForm({ ...form, stock: e.target.value })}
-            className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
+            className={inputClass}
           />
         </div>
       </div>
 
-      <div>
-        <label className="mb-1 block text-sm text-muted">Description</label>
-        <textarea
-          rows={5}
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper"
-        />
-      </div>
+      <DescriptionField
+        value={form.description}
+        onChange={(description) => setForm({ ...form, description })}
+      />
 
       <label className="flex items-center gap-2 text-sm text-paper">
         <input

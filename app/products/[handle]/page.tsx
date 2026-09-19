@@ -6,7 +6,9 @@ import ProductCarousel from "@/components/ProductCarousel";
 import { CashIcon, PhoneIcon, TruckIcon } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { categoryLabel, collectionHref } from "@/lib/categories";
+import { getCategories, labelsOf } from "@/lib/categories-db";
 import { cardNote, countVariants, discountPercent } from "@/lib/product-meta";
+import { descriptionHtml } from "@/lib/format-description";
 import type { Product, ProductVariant } from "@/lib/types";
 
 export const revalidate = 60;
@@ -53,6 +55,8 @@ export default async function ProductPage({
     related.map((item) => [item.id, cardNote(item, variantCounts[item.id] || 0)])
   );
 
+  const labels = labelsOf(await getCategories());
+  const categoryName = p.category ? labels[p.category] ?? categoryLabel(p.category) : "";
   const gallery = p.images?.length ? p.images : p.image_url ? [p.image_url] : [];
   const off = discountPercent(p);
   const compareAt = p.compare_at_price;
@@ -71,7 +75,7 @@ export default async function ProductPage({
                 href={collectionHref(p.category)}
                 className="transition-colors hover:text-charcoal"
               >
-                {categoryLabel(p.category)}
+                {categoryName}
               </Link>
             </>
           )}
@@ -119,7 +123,7 @@ export default async function ProductPage({
         <div className="lg:pt-4">
           {p.category && (
             <span className="inline-block rounded-full bg-gradient-to-r from-[#03b1e6] to-[#0354cd] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
-              {categoryLabel(p.category)}
+              {categoryName}
             </span>
           )}
 
@@ -170,7 +174,7 @@ export default async function ProductPage({
               </p>
               <div
                 className="rich-text text-[13px] leading-relaxed text-charcoal/80"
-                dangerouslySetInnerHTML={{ __html: p.description }}
+                dangerouslySetInnerHTML={{ __html: descriptionHtml(p.description) }}
               />
             </div>
           )}
@@ -179,10 +183,11 @@ export default async function ProductPage({
 
       {p.category && related.length > 0 && (
         <ProductCarousel
-          title={`More ${categoryLabel(p.category)}`}
+          title={`More ${categoryName}`}
           href={collectionHref(p.category)}
           products={related}
           notes={notes}
+          labels={labels}
         />
       )}
     </div>

@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import ImportProductsButton from "@/components/ImportProductsButton";
+import { startOfTodayPk } from "@/lib/analytics";
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -28,6 +30,22 @@ export default async function AdminDashboardPage() {
   const revenue =
     orders?.reduce((sum, o: any) => sum + Number(o.total || 0), 0) || 0;
   const orderCount = orders?.length || 0;
+  // Today's traffic for the summary card; the full picture is on /admin/analytics.
+  const todayStart = startOfTodayPk();
+  const [{ count: viewsToday, error: viewsError }, { data: todayVisitorRows }] = await Promise.all([
+    supabase
+      .from("page_views")
+      .select("id", { count: "exact", head: true })
+      .eq("event", "page_view")
+      .gte("created_at", todayStart),
+    supabase
+      .from("page_views")
+      .select("visitor_id")
+      .eq("event", "page_view")
+      .gte("created_at", todayStart)
+      .limit(1000),
+  ]);
+  const visitorsToday = new Set((todayVisitorRows || []).map((row: any) => row.visitor_id)).size;
 
   const { data: lowStock } = await supabase
     .from("products")
@@ -48,6 +66,30 @@ export default async function AdminDashboardPage() {
         <StatCard label="Total orders" value={orderCount} />
         <StatCard label="Pending orders" value={pendingCount || 0} />
         <StatCard label="Active products" value={productCount || 0} />
+      </div>
+
+      <div className="rounded-md border border-line bg-panel p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display text-lg font-semibold text-paper">Store traffic today</h2>
+            {viewsError ? (
+              <p className="mt-1 text-sm text-muted">Analytics is not set up yet.</p>
+            ) : (
+              <p className="mt-1 text-sm text-muted">
+                <span className="font-semibold text-paper">{viewsToday || 0}</span>{" "}
+                {(viewsToday || 0) === 1 ? "view" : "views"} from{" "}
+                <span className="font-semibold text-paper">{visitorsToday}</span>{" "}
+                {visitorsToday === 1 ? "visitor" : "visitors"}
+              </p>
+            )}
+          </div>
+          <Link
+            href="/admin/analytics"
+            className="rounded-sm bg-signal px-4 py-2 text-sm font-semibold text-ink"
+          >
+            Open analytics
+          </Link>
+        </div>
       </div>
 
       <ImportProductsButton />
