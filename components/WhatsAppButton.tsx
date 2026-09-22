@@ -1,12 +1,36 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+
 // Floating WhatsApp chat button. Hidden until NEXT_PUBLIC_WHATSAPP_NUMBER is
-// set, digits with country code, for example 923001234567.
+// set, digits with country code, for example 923001234567, and never shown on
+// admin pages. Like the button on the old Shopify store, the chat opens with a
+// ready message that names the product the visitor is looking at.
+const GREETING = "Hi! I'm interested in your product and would love to know more about it.";
+
+function chatMessage(pathname: string): string {
+  const lines = [GREETING];
+  if (pathname.startsWith("/products/")) {
+    const product = document.querySelector("main h1")?.textContent?.trim();
+    if (product) lines.push(`I'm visiting: ${product}`);
+  }
+  if (pathname !== "/") lines.push(window.location.origin + pathname);
+  return lines.join("\n");
+}
+
 export default function WhatsAppButton() {
+  const pathname = usePathname() || "/";
   const number = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "").replace(/[^0-9]/g, "");
-  if (!number) return null;
+  if (!number || pathname.startsWith("/admin")) return null;
 
   return (
     <a
-      href={`https://wa.me/${number}`}
+      href={`https://wa.me/${number}?text=${encodeURIComponent(GREETING)}`}
+      // The product name is on the page only after it renders, so the full
+      // message is put together at the moment of the click.
+      onClick={(e) => {
+        e.currentTarget.href = `https://wa.me/${number}?text=${encodeURIComponent(chatMessage(pathname))}`;
+      }}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with TechHulk on WhatsApp"

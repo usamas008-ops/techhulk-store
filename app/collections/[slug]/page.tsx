@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { categoryLabel, collectionHref } from "@/lib/categories";
 import { getCategories, labelsOf } from "@/lib/categories-db";
 import { cardNote, countVariants } from "@/lib/product-meta";
+import { productDeliveryFee } from "@/lib/delivery";
+import { getDeliverySettings } from "@/lib/settings-db";
 import type { Product } from "@/lib/types";
 
 export const revalidate = 60;
@@ -13,10 +15,11 @@ export default async function CollectionPage({ params }: { params: { slug: strin
   const slug = decodeURIComponent(params.slug);
   const supabase = createClient();
 
-  const [{ data }, { data: variantRows }, categories] = await Promise.all([
+  const [{ data }, { data: variantRows }, categories, delivery] = await Promise.all([
     supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: false }),
     supabase.from("product_variants").select("product_id"),
     getCategories(),
+    getDeliverySettings(),
   ]);
 
   const all = (data as Product[]) || [];
@@ -70,7 +73,11 @@ export default async function CollectionPage({ params }: { params: { slug: strin
             <ProductCard
               key={product.id}
               product={product}
-              note={cardNote(product, variantCounts[product.id] || 0)}
+              note={cardNote(
+                product,
+                variantCounts[product.id] || 0,
+                productDeliveryFee(product, delivery)
+              )}
               categoryName={product.category ? labels[product.category] : undefined}
             />
           ))}

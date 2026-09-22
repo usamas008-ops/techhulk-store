@@ -12,6 +12,7 @@ const links = [
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/live", label: "Live now" },
   { href: "/admin/categories", label: "Categories" },
+  { href: "/admin/settings", label: "Settings" },
 ];
 
 export default function AdminSidebar() {

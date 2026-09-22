@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 import { categoryLabel, collectionHref } from "@/lib/categories";
 import { getCategories, labelsOf } from "@/lib/categories-db";
 import { cardNote, countVariants, discountPercent } from "@/lib/product-meta";
+import { productDeliveryFee } from "@/lib/delivery";
+import { getDeliverySettings } from "@/lib/settings-db";
 import { descriptionHtml } from "@/lib/format-description";
 import type { Product, ProductVariant } from "@/lib/types";
 
@@ -51,8 +53,13 @@ export default async function ProductPage({
 
   const related = (relatedRows as Product[]) || [];
   const variantCounts = countVariants(allVariantRows as { product_id: string }[] | null);
+  const deliverySettings = await getDeliverySettings();
+  const deliveryFee = productDeliveryFee(p, deliverySettings);
   const notes = Object.fromEntries(
-    related.map((item) => [item.id, cardNote(item, variantCounts[item.id] || 0)])
+    related.map((item) => [
+      item.id,
+      cardNote(item, variantCounts[item.id] || 0, productDeliveryFee(item, deliverySettings)),
+    ])
   );
 
   const labels = labelsOf(await getCategories());
@@ -148,13 +155,20 @@ export default async function ProductPage({
           </div>
 
           <div className="mt-7 rounded-[24px] bg-white p-5 sm:p-7">
-            <AddToCartForm product={p} variants={(variantRows as ProductVariant[]) || []} />
+            <AddToCartForm
+              product={p}
+              variants={(variantRows as ProductVariant[]) || []}
+              deliveryFee={deliveryFee}
+            />
           </div>
 
           <div className="mt-5 grid grid-cols-3 gap-3">
             {[
               { icon: <CashIcon size={26} />, text: "Cash on Delivery" },
-              { icon: <TruckIcon size={26} />, text: "Free Delivery" },
+              {
+                icon: <TruckIcon size={26} />,
+                text: deliveryFee > 0 ? `Delivery Rs.${deliveryFee.toLocaleString()}` : "Free Delivery",
+              },
               { icon: <PhoneIcon size={24} />, text: "Confirmation Call" },
             ].map((item) => (
               <div

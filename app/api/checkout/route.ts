@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PHONE_HINT, PHONE_REQUIRED, normalizePakistaniMobile } from "@/lib/phone";
 import { isMissingColumnError } from "@/lib/load-all";
+import { cartDeliveryFee, productDeliveryFee } from "@/lib/delivery";
+import { getDeliverySettings } from "@/lib/settings-db";
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 
@@ -42,6 +44,33 @@ export async function POST(req: Request) {
     const supabase = createClient();
     const orderId = randomUUID();
 
+    // Delivery is worked out here rather than trusted from the browser: each
+    // product's own charge, or the store default when it has none. One parcel
+    // per order, so the order pays the highest charge in the cart. Before
+    // supabase/add-delivery.sql is run the column is missing, the select
+    // errors, and delivery stays 0 exactly as it was before this feature.
+    const productIds = Array.from(
+      new Set(items.map((item: any) => item?.productId).filter(Boolean))
+    );
+    let delivery = 0;
+    // Whether the products table already has the column tells us the file has
+    // been run, so the order can be written in the right shape the first time.
+    // A failed insert still burns an order number, and those gaps are visible.
+    let deliveryColumns = false;
+    if (productIds.length > 0) {
+      const { data: feeRows, error: feeError } = await supabase
+        .from("products")
+        .select("id, delivery_fee")
+        .in("id", productIds);
+      if (!feeError && feeRows) {
+        deliveryColumns = true;
+        const settings = await getDeliverySettings();
+        delivery = cartDeliveryFee(
+          feeRows.map((row) => ({ deliveryFee: productDeliveryFee(row, settings) }))
+        );
+      }
+    }
+
     const basePayload = {
       id: orderId,
       customer_name: customerName,
@@ -52,8 +81,10 @@ export async function POST(req: Request) {
       payment_method: "cod",
       status: "pending",
       subtotal,
-      total: subtotal,
+      total: subtotal + delivery,
     };
+    // supabase/add-delivery.sql adds this column.
+    const deliveryPayload = deliveryColumns ? { delivery_fee: delivery } : {};
     // Which ad or link this visitor's browser saw before checking out
     // (lib/attribution.ts). Trimmed defensively since it comes from the client.
     const attributionPayload = {
@@ -66,10 +97,16 @@ export async function POST(req: Request) {
 
     let { error: orderError } = await supabase
       .from("orders")
-      .insert({ ...basePayload, ...attributionPayload });
+      .insert({ ...basePayload, ...attributionPayload, ...deliveryPayload });
 
-    // The attribution columns come from supabase/add-order-attribution.sql.
-    // Without them, save the order anyway rather than failing the checkout.
+    // Those extra columns come from supabase/add-order-attribution.sql and
+    // supabase/add-delivery.sql. Until both are run, drop them one group at a
+    // time and still save the order rather than failing the checkout.
+    if (orderError && isMissingColumnError(orderError.message)) {
+      ({ error: orderError } = await supabase
+        .from("orders")
+        .insert({ ...basePayload, ...attributionPayload }));
+    }
     if (orderError && isMissingColumnError(orderError.message)) {
       ({ error: orderError } = await supabase.from("orders").insert(basePayload));
     }

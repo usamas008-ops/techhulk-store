@@ -3,6 +3,8 @@ import { Inter, Playfair_Display, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { getCategories } from "@/lib/categories-db";
+import { getDeliverySettings } from "@/lib/settings-db";
+import { deliveryHeadline } from "@/lib/delivery";
 import TopBar from "@/components/TopBar";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -29,16 +31,17 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Categories come from the admin; the ones marked "show in menu" drive the
   // header icons, the top links and the footer.
-  const categories = await getCategories();
+  const [categories, delivery] = await Promise.all([getCategories(), getDeliverySettings()]);
   const menu = categories
     .filter((category) => category.show_in_menu)
     .map(({ slug, name }) => ({ slug, name }));
+  const headline = deliveryHeadline(delivery.defaultFee);
 
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${playfair.variable}`}>
       <body className="font-body antialiased">
         <CartProvider>
-          <TopBar menu={menu} />
+          <TopBar menu={menu} deliveryLabel={`${headline.top} ${headline.bottom}`} />
           <Header categories={menu} />
           <main className="min-h-[60vh]">{children}</main>
           <Footer menu={menu} />

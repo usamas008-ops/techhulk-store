@@ -264,3 +264,25 @@ create policy "admin read customers" on customers
 drop policy if exists "admin write customers" on customers;
 create policy "admin write customers" on customers
   for all using (is_admin()) with check (is_admin());
+
+-- Delivery charges (also in supabase/add-delivery.sql).
+alter table products add column if not exists delivery_fee numeric(10,2);
+alter table orders add column if not exists delivery_fee numeric(10,2) not null default 0;
+
+create table if not exists settings (
+  id boolean primary key default true check (id),
+  default_delivery_fee numeric(10,2) not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+insert into settings (id) values (true) on conflict (id) do nothing;
+
+alter table settings enable row level security;
+
+drop policy if exists "public read settings" on settings;
+create policy "public read settings" on settings
+  for select using (true);
+
+drop policy if exists "admin write settings" on settings;
+create policy "admin write settings" on settings
+  for all using (is_admin()) with check (is_admin());

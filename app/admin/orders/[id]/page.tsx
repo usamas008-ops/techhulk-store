@@ -74,9 +74,23 @@ export default async function AdminOrderDetailPage({
             </div>
           ))}
         </div>
-        <div className="mt-4 flex justify-between border-t border-line pt-3 font-semibold text-paper">
-          <span>Total</span>
-          <span>Rs. {Number(order.total).toLocaleString()}</span>
+        <div className="mt-4 space-y-2 border-t border-line pt-3 text-sm">
+          <div className="flex justify-between text-muted">
+            <span>Subtotal</span>
+            <span>Rs. {Number(order.subtotal).toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between text-muted">
+            <span>Delivery</span>
+            <span>
+              {Number(order.delivery_fee) > 0
+                ? `Rs. ${Number(order.delivery_fee).toLocaleString()}`
+                : "Free"}
+            </span>
+          </div>
+          <div className="flex justify-between font-semibold text-paper">
+            <span>Total</span>
+            <span>Rs. {Number(order.total).toLocaleString()}</span>
+          </div>
         </div>
       </div>
     </div>

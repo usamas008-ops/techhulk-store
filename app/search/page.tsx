@@ -3,6 +3,8 @@ import ProductCard from "@/components/ProductCard";
 import { createClient } from "@/lib/supabase/server";
 import { collectionHref } from "@/lib/categories";
 import { cardNote, countVariants } from "@/lib/product-meta";
+import { productDeliveryFee } from "@/lib/delivery";
+import { getDeliverySettings } from "@/lib/settings-db";
 import { getCategories, labelsOf } from "@/lib/categories-db";
 import type { Product } from "@/lib/types";
 
@@ -15,6 +17,7 @@ export default async function SearchPage({
   const supabase = createClient();
 
   const labels = labelsOf(await getCategories());
+  const delivery = await getDeliverySettings();
   let products: Product[] = [];
   let variantCounts: Record<string, number> = {};
 
@@ -81,7 +84,11 @@ export default async function SearchPage({
                   <ProductCard
                     key={product.id}
                     product={product}
-                    note={cardNote(product, variantCounts[product.id] || 0)}
+                    note={cardNote(
+                      product,
+                      variantCounts[product.id] || 0,
+                      productDeliveryFee(product, delivery)
+                    )}
                     categoryName={product.category ? labels[product.category] : undefined}
                   />
                 ))}

@@ -9,6 +9,10 @@ export type Product = {
   price: number;
   compare_at_price: number | null;
   stock: number;
+  // Delivery charge for this product: null means the store default from the
+  // settings table, 0 means free delivery. Optional because the column only
+  // exists once supabase/add-delivery.sql has been run.
+  delivery_fee?: number | null;
   is_active: boolean;
   source_url: string | null;
   created_at: string;
@@ -32,6 +36,9 @@ export type CartItem = {
   price: number;
   image: string | null;
   quantity: number;
+  // The delivery charge that applied when this went into the cart, already
+  // resolved against the store default. Older saved carts do not have it.
+  deliveryFee?: number;
 };
 
 export type Order = {

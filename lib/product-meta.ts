@@ -53,11 +53,13 @@ export function categoryEyebrow(slug: string | null | undefined): string {
  * The small line under a product title. Only states things the store can
  * actually back up; source descriptions are too uneven to mine for specs.
  */
-export function cardNote(product: Product, variantCount: number): string {
+export function cardNote(product: Product, variantCount: number, deliveryFee = 0): string {
   if (product.stock <= 0) return "Out of stock";
   const parts: string[] = [];
   if (variantCount > 1) parts.push(`${variantCount} options`);
-  parts.push("Free delivery");
+  // Only claimed when this product really is free to deliver; the charge
+  // itself is shown on the product's own page, not squeezed in here.
+  if (deliveryFee <= 0) parts.push("Free delivery");
   parts.push("Cash on Delivery");
   return parts.join(" | ");
 }

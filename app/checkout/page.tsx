@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { PHONE_HINT, PHONE_REQUIRED, normalizePakistaniMobile } from "@/lib/phone";
 import { getAttribution } from "@/lib/attribution";
+import { cartDeliveryFee, deliveryLabel } from "@/lib/delivery";
 
 const baseInput =
   "w-full rounded-[12px] border bg-white px-4 py-3 text-[14px] text-onyx placeholder:text-charcoal/40";
@@ -28,6 +29,8 @@ function Label({
 
 export default function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
+  const delivery = cartDeliveryFee(items);
+  const total = subtotal + delivery;
   const router = useRouter();
   const phoneInput = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({ customer_name: "", phone: "", address: "", city: "", notes: "" });
@@ -174,12 +177,18 @@ export default function CheckoutPage() {
           ))}
         </div>
         <div className="mt-4 flex justify-between border-t border-hair pt-4 text-[13px] text-graphite">
+          <span>Subtotal</span>
+          <span className="font-semibold text-night">Rs.{subtotal.toLocaleString()}</span>
+        </div>
+        <div className="mt-2 flex justify-between text-[13px] text-graphite">
           <span>Delivery</span>
-          <span className="font-semibold text-leaf">Free</span>
+          <span className={delivery > 0 ? "font-semibold text-night" : "font-semibold text-leaf"}>
+            {deliveryLabel(delivery)}
+          </span>
         </div>
         <div className="mt-2 flex justify-between text-[15px] font-bold text-night">
           <span>Total</span>
-          <span>Rs.{subtotal.toLocaleString()}</span>
+          <span>Rs.{total.toLocaleString()}</span>
         </div>
       </div>
     </div>

@@ -10,6 +10,8 @@ import { collectionHref } from "@/lib/categories";
 import { getCategories, labelsOf } from "@/lib/categories-db";
 import { AMBASSADORS, BRANDS, CREATORS, HERO_BANNERS, PROMO_PHOTOS } from "@/lib/placeholders";
 import { cardNote, countVariants, discountPercent } from "@/lib/product-meta";
+import { productDeliveryFee } from "@/lib/delivery";
+import { getDeliverySettings } from "@/lib/settings-db";
 import type { Product } from "@/lib/types";
 
 export const revalidate = 60;
@@ -36,16 +38,19 @@ export default async function HomePage({ searchParams }: { searchParams: { categ
   if (searchParams.category) redirect(collectionHref(searchParams.category));
 
   const supabase = createClient();
-  const [{ data }, { data: variantRows }, categories] = await Promise.all([
+  const [{ data }, { data: variantRows }, categories, delivery] = await Promise.all([
     supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: false }),
     supabase.from("product_variants").select("product_id"),
     getCategories(),
+    getDeliverySettings(),
   ]);
 
   const all = (data as Product[]) || [];
   const labels = labelsOf(categories);
   const variantCounts = countVariants(variantRows as { product_id: string }[] | null);
-  const notes = Object.fromEntries(all.map((p) => [p.id, cardNote(p, variantCounts[p.id] || 0)]));
+  const notes = Object.fromEntries(
+    all.map((p) => [p.id, cardNote(p, variantCounts[p.id] || 0, productDeliveryFee(p, delivery))])
+  );
 
   const inCategory = (slug: string) => all.filter((p) => p.category === slug);
   // One row per category that has products, in the admin's order.
@@ -87,7 +92,7 @@ export default async function HomePage({ searchParams }: { searchParams: { categ
 
       <ProductCarousel title="New Arrivals" href={collectionHref("all")} products={all.slice(0, 10)} notes={notes} labels={labels} />
 
-      <TrustRow />
+      <TrustRow defaultDeliveryFee={delivery.defaultFee} />
 
       <PeopleRow kicker="Our" title="Brand Ambassadors" people={AMBASSADORS} />
 
@@ -120,7 +125,8 @@ export default async function HomePage({ searchParams }: { searchParams: { categ
             TechHulk stocks the gadgets people here actually ask for: smart watches with bright
             AMOLED screens, true wireless earbuds with active noise cancellation and low latency
             for gaming, and fast chargers from Apple, Google and OnePlus. Every order is Cash on
-            Delivery with free delivery, and we call you to confirm before anything is dispatched.
+            Delivery{delivery.defaultFee > 0 ? "" : " with free delivery"}, and we call you to
+            confirm before anything is dispatched.
           </p>
         </div>
       </section>

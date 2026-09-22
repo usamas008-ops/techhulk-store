@@ -69,6 +69,12 @@ Supabase ka koi SQL dobara chalane ki zaroorat nahi. Database online hai aur wah
   a Pakistani mobile number such as 03001234567. Name, address and city are optional.
   The rule is checked in the browser and again on the server.
 - **WhatsApp button:** appears once `NEXT_PUBLIC_WHATSAPP_NUMBER` is set in `.env.local`.
+- **Delivery charges:** Admin, Settings holds the store-wide charge, and each product can be set
+  to free or to its own amount on its own page. An order pays the highest charge among the
+  products in its cart, because one parcel goes out per order, and pays nothing when every
+  product in it is free. The checkout route works the charge out from the database, never from
+  the browser. Needs `supabase/add-delivery.sql`; until it is run, delivery stays free and the
+  "Free Delivery" lines on the storefront stay as they were.
 - **Visitor tracking:** anonymous. No names or IP addresses are stored, and admin pages and bots
   are not counted.
 
@@ -82,6 +88,7 @@ Supabase ka koi SQL dobara chalane ki zaroorat nahi. Database online hai aur wah
 | Analytics | The same period buttons. Shows views, visitors, add to cart, orders and revenue; the chart is per hour, day or month; plus top products, the visit-to-order funnel, top pages, traffic sources, devices and orders by source |
 | Live now | Real-time count of who is on the store, which page they have open, and for how long |
 | Categories | Add, rename and reorder categories, choose which ones appear in the top menu, and delete empty ones |
+| Settings | The store-wide delivery charge, plus a list of which products are free, which charge their own amount, and which follow the default |
 
 **Warning:** the dashboard's "Import products now" button re-imports from the old Shopify store.
 Products deleted in the admin that originally came from Shopify will come back if it is pressed.
@@ -113,8 +120,8 @@ Products deleted in the admin that originally came from Shopify will come back i
 
 - Project: `eaogyiwdbrpqfifvvzjo`, owned by the usamas008-ops Supabase account.
 - Tables: `products`, `product_variants`, `orders`, `order_items`, `admins`, `page_views`,
-  `categories` and `customers` (old Shopify customers, admin-only). Storage bucket:
-  `product-images`.
+  `categories`, `customers` (old Shopify customers, admin-only) and `settings` (one row, holds
+  the default delivery charge). Storage bucket: `product-images`.
 - **Already done on this project,** including `supabase/add-order-attribution.sql` on
   22 September 2026. For a brand-new Supabase project, run these files in SQL Editor, in order:
   1. `supabase/schema.sql`, which already contains everything below
@@ -122,8 +129,9 @@ Products deleted in the admin that originally came from Shopify will come back i
   3. `supabase/add-categories.sql`
   4. `supabase/add-order-attribution.sql`
   5. `supabase/add-customers.sql`
+  6. `supabase/add-delivery.sql`
 
-  All five are safe to run more than once.
+  All six are safe to run more than once.
 - **Importing Shopify customers:** in Shopify admin, Customers, Export, All customers, CSV.
   Keep the file outside the project folder, for example in Downloads, then from the project
   folder run the first command to preview and the second to import:
@@ -157,7 +165,7 @@ Products deleted in the admin that originally came from Shopify will come back i
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase publishable key, `sb_publishable_...` | No |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase secret key, `sb_secret_...`, used by the product import | **Yes** |
 | `SOURCE_STORE_URL` | Store the importer reads, currently `https://techhulk.store` | No |
-| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Your WhatsApp number, for example `923001234567` | No |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp number for the chat button and footer, digits only: `923399111900` | No |
 
 ---
 
@@ -185,9 +193,18 @@ Products deleted in the admin that originally came from Shopify will come back i
    - Stock does not go down when an order is placed.
    - The device type comes from the window width, so a small laptop window counts as "Mobile".
      Using the browser's device information would fix this.
-   - Ad source only shows up when the ad's link carries `utm_source`/`utm_medium`, or a
-     click id such as `fbclid`, `gclid` or `ttclid` (see `lib/attribution.ts`). A share with a
-     plain link, for example pasted into WhatsApp with no tag added, still shows as "Direct".
+   - Ad source only shows up when the ad's link carries `utm_source`/`utm_medium`, or an ad
+     click id: `gclid` for Google, `ttclid` for TikTok (see `lib/attribution.ts`). Facebook's
+     `fbclid` is also on ordinary post links, so on its own it shows just "Facebook". Only
+     `utm_medium=paid` makes it "Facebook Ads". A share with a plain link, for example pasted
+     into WhatsApp with no tag added, still shows as "Direct".
+   - Tags to put in the ads (they make "Facebook Ads", "Instagram Ads" and "TikTok Ads" exact):
+     - Meta Ads Manager, ad level, Tracking, URL parameters:
+       `utm_source={{site_source_name}}&utm_medium=paid&utm_campaign={{campaign.name}}`
+     - TikTok Ads Manager, ad's URL parameters: `utm_source=tiktok&utm_medium=paid&utm_campaign=<name>`
+     - Google Ads needs nothing: auto-tagging adds `gclid`.
+     - Instagram or TikTok bio link: `https://techhulk.store/?utm_source=instagram&utm_medium=bio`
+       (or `utm_source=tiktok`). In-app browsers often hide where a visitor came from.
    - Product options such as colours cannot be added or edited in the admin. Only imported ones
      exist.
    - Checkout trusts the prices the browser sends. Every order is confirmed by phone, but

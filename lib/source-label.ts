@@ -16,6 +16,10 @@ const SOURCE_ALIASES: Record<string, string> = {
   fb: "Facebook",
   instagram: "Instagram",
   ig: "Instagram",
+  // What Meta's {{site_source_name}} URL parameter fills in, beside fb and ig.
+  msg: "Messenger",
+  messenger: "Messenger",
+  an: "Audience Network",
   google: "Google",
   youtube: "YouTube",
   yt: "YouTube",
@@ -57,8 +61,9 @@ function titleCase(text: string): string {
 
 /**
  * "Facebook Ads" when an advertiser explicitly tagged the link (utm_source
- * plus a paid utm_medium, or an ad click id such as fbclid/gclid/ttclid,
- * captured in lib/attribution.ts). "google.com (organic)" for an ordinary
+ * plus a paid utm_medium, or an ad-only click id such as gclid/ttclid,
+ * captured in lib/attribution.ts). Just "Facebook" when only fbclid came
+ * along, since that can be an ad or a post. "google.com (organic)" for an ordinary
  * link from another site. "Direct" when nothing was captured at all.
  */
 export function sourceLabel(a: Attribution): string {

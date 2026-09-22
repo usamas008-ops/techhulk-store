@@ -9,9 +9,11 @@ import type { Product, ProductVariant } from "@/lib/types";
 export default function AddToCartForm({
   product,
   variants,
+  deliveryFee = 0,
 }: {
   product: Product;
   variants: ProductVariant[];
+  deliveryFee?: number;
 }) {
   const { addItem } = useCart();
   const router = useRouter();
@@ -34,6 +36,7 @@ export default function AddToCartForm({
       price,
       image: product.image_url,
       quantity,
+      deliveryFee,
     });
     track("add_to_cart", { productId: product.id });
     setAdded(true);

@@ -1,15 +1,19 @@
 import type { ReactNode } from "react";
 import { CashIcon, DeviceIcon, PhoneIcon, TruckIcon } from "@/components/icons";
+import { deliveryHeadline } from "@/lib/delivery";
 
 // Only promises the store actually keeps: see checkout and the success page.
-const items: { icon: ReactNode; top: string; bottom: string }[] = [
-  { icon: <TruckIcon size={34} />, top: "Free Delivery", bottom: "Nationwide" },
-  { icon: <CashIcon size={34} />, top: "Cash on", bottom: "Delivery" },
-  { icon: <PhoneIcon size={32} />, top: "Confirmation Call", bottom: "Before Dispatch" },
-  { icon: <DeviceIcon size={32} />, top: "Easy Ordering", bottom: "No Account Needed" },
-];
+// The delivery line follows the store's own charge, so it never says free
+// while the shop is charging for it.
+export default function TrustRow({ defaultDeliveryFee = 0 }: { defaultDeliveryFee?: number }) {
+  const delivery = deliveryHeadline(defaultDeliveryFee);
+  const items: { icon: ReactNode; top: string; bottom: string }[] = [
+    { icon: <TruckIcon size={34} />, top: delivery.top, bottom: delivery.bottom },
+    { icon: <CashIcon size={34} />, top: "Cash on", bottom: "Delivery" },
+    { icon: <PhoneIcon size={32} />, top: "Confirmation Call", bottom: "Before Dispatch" },
+    { icon: <DeviceIcon size={32} />, top: "Easy Ordering", bottom: "No Account Needed" },
+  ];
 
-export default function TrustRow() {
   return (
     <section className="container-page py-10 sm:py-14">
       <div className="grid items-center gap-8 lg:grid-cols-[300px_1fr]">

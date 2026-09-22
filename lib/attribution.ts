@@ -14,13 +14,18 @@ export type StoredAttribution = {
   capturedAt: number;
 };
 
-// Click ids each ad platform appends to its links, used even when the
-// advertiser did not also add utm_source/utm_medium.
-const CLICK_IDS: Record<string, { source: string; medium: string }> = {
-  fbclid: { source: "facebook", medium: "cpc" },
+// Click ids platforms append to their links, used even when the advertiser
+// did not also add utm_source/utm_medium. gclid (gbraid/wbraid on iPhones),
+// ttclid and msclkid are only added to ad clicks. fbclid is not: Facebook
+// adds it to ordinary post links too, so it names the platform but not
+// whether the visitor clicked an ad. Only a paid utm_medium proves that.
+const CLICK_IDS: Record<string, { source: string; medium: string | null }> = {
   gclid: { source: "google", medium: "cpc" },
+  gbraid: { source: "google", medium: "cpc" },
+  wbraid: { source: "google", medium: "cpc" },
   ttclid: { source: "tiktok", medium: "cpc" },
   msclkid: { source: "bing", medium: "cpc" },
+  fbclid: { source: "facebook", medium: null },
 };
 
 function readStored(): StoredAttribution | null {
@@ -79,12 +84,18 @@ export function captureAttribution(): void {
       }
     }
 
+    const referrer = externalReferrerHost();
+    // Meta can add fbclid to Instagram links as well; the referrer tells them apart.
+    if (clickSource === "facebook" && referrer?.split(".").includes("instagram")) {
+      clickSource = "instagram";
+    }
+
     if (utmSource || utmMedium || utmCampaign || clickSource) {
       write({
         utm_source: (utmSource || clickSource || "").slice(0, 60) || null,
         utm_medium: (utmMedium || clickMedium || "").slice(0, 60) || null,
         utm_campaign: (utmCampaign || "").slice(0, 100) || null,
-        referrer: externalReferrerHost(),
+        referrer,
         landing_path: window.location.pathname.slice(0, 300),
         capturedAt: Date.now(),
       });
@@ -92,7 +103,6 @@ export function captureAttribution(): void {
     }
 
     if (!readStored()) {
-      const referrer = externalReferrerHost();
       if (referrer) {
         write({
           utm_source: null,

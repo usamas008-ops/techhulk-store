@@ -3,9 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
+import { cartDeliveryFee, deliveryLabel } from "@/lib/delivery";
 
 export default function CartPage() {
   const { items, removeItem, setQuantity, subtotal } = useCart();
+  const delivery = cartDeliveryFee(items);
+  const total = subtotal + delivery;
 
   if (items.length === 0) {
     return (
@@ -125,11 +128,13 @@ export default function CartPage() {
         </div>
         <div className="mt-2 flex justify-between text-[13px] text-graphite">
           <span>Delivery</span>
-          <span className="font-semibold text-leaf">Free</span>
+          <span className={delivery > 0 ? "font-semibold text-night" : "font-semibold text-leaf"}>
+            {deliveryLabel(delivery)}
+          </span>
         </div>
         <div className="mt-4 flex justify-between border-t border-hair pt-4 text-[15px] font-bold text-night">
           <span>Total</span>
-          <span>Rs.{subtotal.toLocaleString()}</span>
+          <span>Rs.{total.toLocaleString()}</span>
         </div>
 
         <p className="mt-3 text-[12px] leading-relaxed text-slate">

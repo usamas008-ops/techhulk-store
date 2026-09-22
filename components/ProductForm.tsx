@@ -6,6 +6,7 @@ import DescriptionField from "@/components/DescriptionField";
 import ProductImagesField from "@/components/ProductImagesField";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { isMissingColumnError } from "@/lib/load-all";
 import type { Product } from "@/lib/types";
 
 function slugify(text: string) {
@@ -19,12 +20,21 @@ function slugify(text: string) {
 const inputClass = "w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper";
 const labelClass = "mb-1 block text-sm text-muted";
 
+// A product's own delivery charge, or the store default when it has none.
+// "free" is stored as 0, "default" as null.
+function deliveryChoice(fee: number | null | undefined): "default" | "free" | "custom" {
+  if (fee === null || fee === undefined) return "default";
+  return Number(fee) > 0 ? "custom" : "free";
+}
+
 export default function ProductForm({
   product,
   categories,
+  defaultDeliveryFee = 0,
 }: {
   product?: Product;
   categories: { slug: string; name: string }[];
+  defaultDeliveryFee?: number;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -38,6 +48,8 @@ export default function ProductForm({
     price: product?.price?.toString() || "",
     compare_at_price: product?.compare_at_price?.toString() || "",
     stock: product?.stock?.toString() || "0",
+    delivery: deliveryChoice(product?.delivery_fee),
+    delivery_fee: Number(product?.delivery_fee) > 0 ? String(product?.delivery_fee) : "",
     is_active: product?.is_active ?? true,
   });
   const [images, setImages] = useState<string[]>(
@@ -69,10 +81,23 @@ export default function ProductForm({
       stock: Number(form.stock) || 0,
       is_active: form.is_active,
     };
+    const deliveryPayload = {
+      delivery_fee:
+        form.delivery === "default" ? null : form.delivery === "free" ? 0 : Number(form.delivery_fee) || 0,
+    };
 
-    const { error } = isEdit
-      ? await supabase.from("products").update(payload).eq("id", product!.id)
-      : await supabase.from("products").insert(payload);
+    const write = (body: Record<string, unknown>) =>
+      isEdit
+        ? supabase.from("products").update(body).eq("id", product!.id)
+        : supabase.from("products").insert(body);
+
+    let { error } = await write({ ...payload, ...deliveryPayload });
+
+    // The delivery_fee column comes from supabase/add-delivery.sql. Until it is
+    // run, save the rest of the product instead of failing the whole form.
+    if (error && isMissingColumnError(error.message)) {
+      ({ error } = await write(payload));
+    }
 
     if (error) {
       setError(
@@ -167,6 +192,52 @@ export default function ProductForm({
             className={inputClass}
           />
         </div>
+      </div>
+
+      <div className="rounded-sm border border-line p-3">
+        <label className={labelClass}>Delivery charge for this product</label>
+        <div className="flex flex-wrap items-center gap-4 text-sm text-paper">
+          {(
+            [
+              {
+                key: "default",
+                label:
+                  defaultDeliveryFee > 0
+                    ? `Store default, Rs.${defaultDeliveryFee.toLocaleString()}`
+                    : "Store default, free",
+              },
+              { key: "free", label: "Free delivery" },
+              { key: "custom", label: "Own charge" },
+            ] as const
+          ).map((choice) => (
+            <label key={choice.key} className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="delivery"
+                checked={form.delivery === choice.key}
+                onChange={() => setForm({ ...form, delivery: choice.key })}
+              />
+              {choice.label}
+            </label>
+          ))}
+          {form.delivery === "custom" && (
+            <input
+              type="number"
+              min={0}
+              value={form.delivery_fee}
+              onChange={(e) => setForm({ ...form, delivery_fee: e.target.value })}
+              placeholder="Rs."
+              className={`${inputClass} w-28`}
+            />
+          )}
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          One parcel goes out per order, so an order pays the highest charge in the cart, and
+          nothing at all when every product in it is free.{" "}
+          <Link href="/admin/settings" className="text-signal hover:underline">
+            Change the store default
+          </Link>
+        </p>
       </div>
 
       <DescriptionField
