@@ -5,3 +5,5 @@ node_modules
 *.log
 .DS_Store
 *.tsbuildinfo
+# Customer exports hold personal data; never commit them.
+*.csv
