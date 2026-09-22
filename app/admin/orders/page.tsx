@@ -2,7 +2,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Panel, SimpleBars, Stat } from "@/components/admin/AnalyticsParts";
 import { dayKey, shortDay } from "@/lib/analytics";
+import { isMissingColumnError } from "@/lib/load-all";
 import PeriodTabs from "@/components/admin/PeriodTabs";
+import { sourceLabel } from "@/lib/source-label";
 import { formatPk, monthLabel, orderBuckets, periodLabel, resolvePeriod } from "@/lib/order-report";
 
 export const dynamic = "force-dynamic";
@@ -25,35 +27,79 @@ type OrderRow = {
   total: number;
   status: string;
   created_at: string;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  referrer?: string | null;
 };
 
-// Supabase returns at most 1000 rows per request, so read in pages.
-async function loadOrders(supabase: ReturnType<typeof createClient>, start: string | null, end: string | null) {
-  const rows: OrderRow[] = [];
-  for (let from = 0; from < 10000; from += 1000) {
-    let query = supabase
-      .from("orders")
-      .select("id, order_number, customer_name, phone, city, total, status, created_at")
-      .order("created_at", { ascending: false })
-      .range(from, from + 999);
-    if (start) query = query.gte("created_at", start);
-    if (end) query = query.lte("created_at", end);
-    const { data, error } = await query;
-    if (error) break;
-    rows.push(...((data as OrderRow[]) || []));
-    if (!data || data.length < 1000) break;
+// Supabase returns at most 1000 rows per request, so read in pages. Tries the
+// select with the source columns first, and only falls back to the smaller
+// select if supabase/add-order-attribution.sql has not been run yet. Each
+// select string is written out in full (not passed through a variable) so
+// Supabase's TypeScript client can still read the exact column list.
+async function loadOrders(
+  supabase: ReturnType<typeof createClient>,
+  start: string | null,
+  end: string | null,
+  phone: string | null
+) {
+  async function runWithSource() {
+    const rows: OrderRow[] = [];
+    for (let from = 0; from < 10000; from += 1000) {
+      let query = supabase
+        .from("orders")
+        .select(
+          "id, order_number, customer_name, phone, city, total, status, created_at, utm_source, utm_medium, referrer"
+        )
+        .order("created_at", { ascending: false })
+        .range(from, from + 999);
+      if (start) query = query.gte("created_at", start);
+      if (end) query = query.lte("created_at", end);
+      if (phone) query = query.eq("phone", phone);
+      const { data, error } = await query;
+      if (error) return { rows, error };
+      rows.push(...((data as OrderRow[]) || []));
+      if (!data || data.length < 1000) break;
+    }
+    return { rows, error: null as { message: string } | null };
   }
-  return rows;
+
+  async function runWithoutSource() {
+    const rows: OrderRow[] = [];
+    for (let from = 0; from < 10000; from += 1000) {
+      let query = supabase
+        .from("orders")
+        .select("id, order_number, customer_name, phone, city, total, status, created_at")
+        .order("created_at", { ascending: false })
+        .range(from, from + 999);
+      if (start) query = query.gte("created_at", start);
+      if (end) query = query.lte("created_at", end);
+      if (phone) query = query.eq("phone", phone);
+      const { data, error } = await query;
+      if (error) return { rows, error };
+      rows.push(...((data as OrderRow[]) || []));
+      if (!data || data.length < 1000) break;
+    }
+    return { rows, error: null as { message: string } | null };
+  }
+
+  const first = await runWithSource();
+  if (first.error && isMissingColumnError(first.error.message)) {
+    const fallback = await runWithoutSource();
+    return { rows: fallback.rows, attributionReady: false };
+  }
+  return { rows: first.rows, attributionReady: true };
 }
 
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: { period?: string; from?: string; to?: string; status?: string };
+  searchParams: { period?: string; from?: string; to?: string; status?: string; phone?: string };
 }) {
   const period = resolvePeriod(searchParams.period, searchParams.from, searchParams.to);
   const supabase = createClient();
-  const orders = await loadOrders(supabase, period.start, period.end);
+  const phoneFilter = (searchParams.phone || "").trim() || null;
+  const { rows: orders, attributionReady } = await loadOrders(supabase, period.start, period.end, phoneFilter);
 
   const statusFilter = STATUSES.includes(searchParams.status || "") ? (searchParams.status as string) : "";
   const visible = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders;
@@ -80,7 +126,12 @@ export default async function AdminOrdersPage({
 
   const href = (changes: Record<string, string>) => {
     const params = new URLSearchParams();
-    const merged: Record<string, string> = { period: period.key, status: statusFilter, ...changes };
+    const merged: Record<string, string> = {
+      period: period.key,
+      status: statusFilter,
+      phone: phoneFilter || "",
+      ...changes,
+    };
     if (merged.period === "custom") {
       merged.from = merged.from ?? period.fromKey ?? "";
       merged.to = merged.to ?? period.toKey;
@@ -96,7 +147,26 @@ export default async function AdminOrdersPage({
         <p className="mt-1 text-sm text-muted">{rangeText}, Pakistan time</p>
       </div>
 
-      <PeriodTabs basePath="/admin/orders" period={period} extra={{ status: statusFilter }} />
+      {phoneFilter && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-panel px-4 py-3 text-sm">
+          <span className="text-paper">
+            Showing orders for <span className="font-semibold">{phoneFilter}</span>
+          </span>
+          <Link href={href({ phone: "" })} className="text-signal hover:underline">
+            Clear filter
+          </Link>
+        </div>
+      )}
+
+      {!attributionReady && (
+        <p className="rounded-md border border-line bg-panel p-4 text-sm text-muted">
+          Source is not tracked yet. Open Supabase, run{" "}
+          <code className="text-paper">supabase/add-order-attribution.sql</code>, and new orders
+          will show whether they came from a Facebook, Google or TikTok ad.
+        </p>
+      )}
+
+      <PeriodTabs basePath="/admin/orders" period={period} extra={{ status: statusFilter, phone: phoneFilter || "" }} />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
         <Stat label="Orders" value={orders.length} />
@@ -139,6 +209,7 @@ export default async function AdminOrdersPage({
               <th className="px-4 py-3">City</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Source</th>
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3"></th>
             </tr>
@@ -154,6 +225,7 @@ export default async function AdminOrdersPage({
                 <td className="px-4 py-3 text-muted">{o.city || "Not given"}</td>
                 <td className="px-4 py-3">Rs. {Number(o.total).toLocaleString()}</td>
                 <td className={`px-4 py-3 capitalize ${statusColor[o.status] || ""}`}>{o.status}</td>
+                <td className="px-4 py-3 text-muted">{sourceLabel(o)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted">{formatPk(o.created_at)}</td>
                 <td className="px-4 py-3 text-right">
                   <Link href={`/admin/orders/${o.id}`} className="text-signal hover:underline">

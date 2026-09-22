@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { PHONE_HINT, PHONE_REQUIRED, normalizePakistaniMobile } from "@/lib/phone";
+import { getAttribution } from "@/lib/attribution";
 
 const baseInput =
   "w-full rounded-[12px] border bg-white px-4 py-3 text-[14px] text-onyx placeholder:text-charcoal/40";
@@ -72,13 +73,13 @@ export default function CheckoutPage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customer, items, subtotal }),
+        body: JSON.stringify({ customer, items, subtotal, attribution: getAttribution() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Order failed");
 
       clear();
-      router.push(`/checkout/success?order=${data.orderNumber}`);
+      router.push(data.orderNumber ? `/checkout/success?order=${data.orderNumber}` : "/checkout/success");
     } catch (err: any) {
       setError(
         err.message === "Failed to fetch"

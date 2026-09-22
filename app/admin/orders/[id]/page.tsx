@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import OrderStatusSelect from "@/components/OrderStatusSelect";
+import { sourceLabel } from "@/lib/source-label";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -52,6 +53,8 @@ export default async function AdminOrderDetailPage({
           )}
           <dt className="text-muted">Payment</dt>
           <dd className="text-paper">Cash on Delivery</dd>
+          <dt className="text-muted">Came from</dt>
+          <dd className="text-paper">{sourceLabel(order)}</dd>
         </dl>
       </div>
 

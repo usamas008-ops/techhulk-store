@@ -1,12 +1,15 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PHONE_HINT, PHONE_REQUIRED, normalizePakistaniMobile } from "@/lib/phone";
+import { isMissingColumnError } from "@/lib/load-all";
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 
 export async function POST(req: Request) {
   try {
-    const { customer, items, subtotal } = await req.json();
+    const { customer, items, subtotal, attribution } = await req.json();
 
     // Validate before touching the database. The browser checks the same rule,
     // but this route can also be called directly. Only the phone number is
@@ -30,31 +33,54 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
+    // Guests may create orders but not read them: the only read rule on
+    // orders is admin-only. Postgres also applies that read rule when an
+    // insert returns its own row (what supabase-js .insert().select() does),
+    // so a guest's order must be written without reading it back. The id is
+    // made here instead of by the database. Reading it back is why checkout
+    // used to work only while an admin was signed in on the same browser.
     const supabase = createClient();
+    const orderId = randomUUID();
 
-    const { data: order, error: orderError } = await supabase
+    const basePayload = {
+      id: orderId,
+      customer_name: customerName,
+      phone,
+      address,
+      city,
+      notes: notes || null,
+      payment_method: "cod",
+      status: "pending",
+      subtotal,
+      total: subtotal,
+    };
+    // Which ad or link this visitor's browser saw before checking out
+    // (lib/attribution.ts). Trimmed defensively since it comes from the client.
+    const attributionPayload = {
+      utm_source: text(attribution?.utm_source).slice(0, 60) || null,
+      utm_medium: text(attribution?.utm_medium).slice(0, 60) || null,
+      utm_campaign: text(attribution?.utm_campaign).slice(0, 100) || null,
+      referrer: text(attribution?.referrer).slice(0, 200) || null,
+      landing_path: text(attribution?.landing_path).slice(0, 300) || null,
+    };
+
+    let { error: orderError } = await supabase
       .from("orders")
-      .insert({
-        customer_name: customerName,
-        phone,
-        address,
-        city,
-        notes: notes || null,
-        payment_method: "cod",
-        status: "pending",
-        subtotal,
-        total: subtotal,
-      })
-      .select()
-      .single();
+      .insert({ ...basePayload, ...attributionPayload });
 
-    if (orderError || !order) {
+    // The attribution columns come from supabase/add-order-attribution.sql.
+    // Without them, save the order anyway rather than failing the checkout.
+    if (orderError && isMissingColumnError(orderError.message)) {
+      ({ error: orderError } = await supabase.from("orders").insert(basePayload));
+    }
+
+    if (orderError) {
       console.error(orderError);
       return NextResponse.json({ error: "Could not create order" }, { status: 500 });
     }
 
     const orderItems = items.map((item: any) => ({
-      order_id: order.id,
+      order_id: orderId,
       product_id: item.productId,
       variant_id: item.variantId,
       title: item.title,
@@ -73,7 +99,20 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ orderNumber: order.order_number });
+    // Only the server-only service key can read the order number back. If it
+    // is not configured, the order is still saved and the thank-you page
+    // simply leaves the number out.
+    let orderNumber: number | null = null;
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const { data } = await createAdminClient()
+        .from("orders")
+        .select("order_number")
+        .eq("id", orderId)
+        .maybeSingle();
+      orderNumber = data?.order_number ?? null;
+    }
+
+    return NextResponse.json({ orderNumber });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Unexpected error" }, { status: 500 });

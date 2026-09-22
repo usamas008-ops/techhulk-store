@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import ViewTracker from "@/components/ViewTracker";
+import AttributionTracker from "@/components/AttributionTracker";
 import LivePresence from "@/components/LivePresence";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
@@ -42,6 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="min-h-[60vh]">{children}</main>
           <Footer menu={menu} />
           <WhatsAppButton />
+          <AttributionTracker />
           <ViewTracker />
           <LivePresence />
         </CartProvider>

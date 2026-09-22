@@ -1,4 +1,5 @@
 import { dayKey, daysBetween, lastDays, monthLabel, shortDay } from "@/lib/analytics";
+import { sourceLabel } from "@/lib/source-label";
 
 export { daysBetween, monthLabel };
 
@@ -85,4 +86,27 @@ export function periodLabel(period: Period, fromKey: string): string {
   if (period.key === "all") return "All time";
   if (fromKey === period.toKey) return withYear(period.toKey);
   return `${withYear(fromKey)} to ${withYear(period.toKey)}`;
+}
+
+type OrderWithSource = {
+  total: number | string;
+  status: string;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  referrer?: string | null;
+};
+
+/** Order count and revenue per acquisition source (Facebook Ads, Direct, ...). */
+export function orderSources(orders: OrderWithSource[]) {
+  const byLabel = new Map<string, { orders: number; revenue: number }>();
+  for (const order of orders) {
+    const label = sourceLabel(order);
+    let bucket = byLabel.get(label);
+    if (!bucket) byLabel.set(label, (bucket = { orders: 0, revenue: 0 }));
+    bucket.orders++;
+    if (order.status !== "cancelled") bucket.revenue += Number(order.total) || 0;
+  }
+  return Array.from(byLabel.entries())
+    .map(([source, v]) => ({ source, ...v }))
+    .sort((a, b) => b.orders - a.orders);
 }

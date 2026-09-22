@@ -16,3 +16,12 @@ export async function loadAll<T>(
   }
   return { rows, error: null, capped: true };
 }
+
+/**
+ * True when a Postgres or PostgREST error means a column or table is
+ * missing — the signal admin pages use to fall back to a smaller select, or
+ * to show a "run this SQL" notice, instead of failing outright.
+ */
+export function isMissingColumnError(message: string): boolean {
+  return /column .* does not exist|could not find the .* column|schema cache/i.test(message);
+}

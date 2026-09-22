@@ -45,7 +45,8 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-[70vh] bg-ink text-paper">
       <AdminSidebar />
-      <div className="flex-1 p-8">{children}</div>
+      {/* min-w-0 lets wide tables scroll inside their own box instead of widening the page */}
+      <div className="min-w-0 flex-1 p-8">{children}</div>
     </div>
   );
 }

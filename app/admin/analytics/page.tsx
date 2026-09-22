@@ -3,13 +3,22 @@ import Link from "next/link";
 import PeriodTabs from "@/components/admin/PeriodTabs";
 import { BarList, Funnel, Panel, Stat, TrafficChart } from "@/components/admin/AnalyticsParts";
 import { dayKey, plural, summarize, trafficBuckets, type ViewRow } from "@/lib/analytics";
-import { loadAll } from "@/lib/load-all";
-import { periodLabel, resolvePeriod } from "@/lib/order-report";
+import { isMissingColumnError, loadAll } from "@/lib/load-all";
+import { orderSources, periodLabel, resolvePeriod } from "@/lib/order-report";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-type OrderLite = { created_at: string; total: number; status: string };
+type OrderLite = {
+  created_at: string;
+  total: number;
+  status: string;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  referrer?: string | null;
+};
+
+
 
 export default async function AnalyticsPage({
   searchParams,
@@ -19,7 +28,7 @@ export default async function AnalyticsPage({
   const period = resolvePeriod(searchParams.period, searchParams.from, searchParams.to);
   const supabase = createClient();
 
-  const [views, orders, { data: products }] = await Promise.all([
+const [views, orders, { data: products }] = await Promise.all([
     loadAll<ViewRow>((from, to) => {
       let query = supabase
         .from("page_views")
@@ -33,7 +42,7 @@ export default async function AnalyticsPage({
     loadAll<OrderLite>((from, to) => {
       let query = supabase
         .from("orders")
-        .select("created_at, total, status")
+        .select("created_at, total, status, utm_source, utm_medium, referrer")
         .order("created_at", { ascending: false })
         .range(from, to);
       if (period.start) query = query.gte("created_at", period.start);
@@ -42,6 +51,26 @@ export default async function AnalyticsPage({
     }, 10000),
     supabase.from("products").select("id, title, handle, image_url"),
   ]);
+
+  // The source columns come from supabase/add-order-attribution.sql. Until
+  // that has been run, fall back to the smaller select rather than failing.
+  let orderRows = orders.rows;
+  let attributionReady = true;
+  if (orders.error && isMissingColumnError(orders.error)) {
+    attributionReady = false;
+    orderRows = (
+      await loadAll<OrderLite>((from, to) => {
+        let query = supabase
+          .from("orders")
+          .select("created_at, total, status")
+          .order("created_at", { ascending: false })
+          .range(from, to);
+        if (period.start) query = query.gte("created_at", period.start);
+        if (period.end) query = query.lte("created_at", period.end);
+        return query;
+      }, 10000)
+    ).rows;
+  }
 
   if (views.error) {
     return (
@@ -67,8 +96,8 @@ export default async function AnalyticsPage({
   const chartTitle =
     chart.unit === "hour" ? "Traffic by hour" : chart.unit === "day" ? "Traffic by day" : "Traffic by month";
 
-  const orderCount = orders.rows.length;
-  const revenue = orders.rows
+  const orderCount = orderRows.length;
+  const revenue = orderRows
     .filter((o) => o.status !== "cancelled")
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
   const ordered = s.funnel.visitors ? ((orderCount / s.funnel.visitors) * 100).toFixed(1) : "0.0";
@@ -91,6 +120,14 @@ export default async function AnalyticsPage({
       </div>
 
       <PeriodTabs basePath="/admin/analytics" period={period} />
+
+      {!attributionReady && (
+        <p className="rounded-md border border-line bg-panel p-4 text-sm text-muted">
+          Ad and traffic source is not tracked on orders yet. Open Supabase, run{" "}
+          <code className="text-paper">supabase/add-order-attribution.sql</code>, and new orders
+          will show here.
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Views" value={s.totals.views} sub={`${perVisitor} pages per visitor`} />
@@ -185,6 +222,15 @@ export default async function AnalyticsPage({
         </Panel>
         <Panel title="Devices">
           <BarList rows={deviceRows} empty="No visitors in this period." />
+        </Panel>
+        <Panel title="Orders by source">
+          <BarList
+            rows={orderSources(orderRows).map((row) => ({
+              label: `${row.source} — Rs. ${row.revenue.toLocaleString()}`,
+              value: row.orders,
+            }))}
+            empty="No orders in this period."
+          />
         </Panel>
       </div>
     </div>

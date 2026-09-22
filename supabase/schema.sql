@@ -219,3 +219,48 @@ insert into categories (slug, name, sort_order, show_in_menu) values
   ('powerbanks', 'Power banks', 40, false),
   ('accessories', 'Accessories', 50, false)
 on conflict (slug) do nothing;
+
+-- ---------- ORDER ATTRIBUTION ----------
+-- Which ad or link brought each order in, captured by the browser at
+-- checkout (lib/attribution.ts) and read on /admin/customers, /admin/orders
+-- and /admin/analytics (lib/source-label.ts). Existing orders keep these
+-- columns blank, which the app already treats as "Direct".
+alter table orders add column if not exists utm_source text;
+alter table orders add column if not exists utm_medium text;
+alter table orders add column if not exists utm_campaign text;
+alter table orders add column if not exists referrer text;
+alter table orders add column if not exists landing_path text;
+
+create index if not exists idx_orders_phone on orders (phone);
+
+-- ---------- CUSTOMERS IMPORTED FROM SHOPIFY ----------
+create table if not exists customers (
+  id uuid primary key default uuid_generate_v4(),
+  shopify_customer_id text unique,
+  phone text,
+  name text not null default '',
+  email text,
+  address text,
+  city text,
+  country_code text,
+  shopify_orders_count int not null default 0,
+  shopify_total_spent numeric(12,2) not null default 0,
+  accepts_email_marketing boolean not null default false,
+  accepts_whatsapp_marketing boolean not null default false,
+  tags text,
+  source text not null default 'shopify',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_customers_phone on customers (phone);
+
+alter table customers enable row level security;
+
+drop policy if exists "admin read customers" on customers;
+create policy "admin read customers" on customers
+  for select using (is_admin());
+
+drop policy if exists "admin write customers" on customers;
+create policy "admin write customers" on customers
+  for all using (is_admin()) with check (is_admin());
