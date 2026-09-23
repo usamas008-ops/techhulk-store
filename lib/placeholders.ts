@@ -66,7 +66,9 @@ export const CREATORS = [
 /** Real brands the catalog stocks (Apple, Google and OnePlus chargers). */
 export const BRANDS = ["Apple", "Google", "OnePlus"];
 
+// Real contact details, not placeholders. The shop's phone number is not here:
+// the footer shows NEXT_PUBLIC_WHATSAPP_NUMBER, so calls and WhatsApp are the
+// same one line.
 export const SUPPORT = {
-  phone: "03XX XXXXXXX",
-  email: "support@techhulk.store",
+  email: "techhulk.shop@gmail.com",
 };

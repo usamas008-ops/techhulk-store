@@ -3,7 +3,11 @@ import { collectionHref } from "@/lib/categories";
 import { SUPPORT } from "@/lib/placeholders";
 
 export default function Footer({ menu }: { menu: { slug: string; name: string }[] }) {
+  // One number for the shop: the same line people call and message on
+  // WhatsApp, written the local way, 0339 1234567.
   const whatsapp = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "").replace(/[^0-9]/g, "");
+  const local = whatsapp.startsWith("92") ? `0${whatsapp.slice(2)}` : whatsapp;
+  const callNumber = local.length === 11 ? `${local.slice(0, 4)} ${local.slice(4)}` : local;
 
   return (
     <footer className="px-3 pb-6 pt-10 sm:px-5 lg:px-8">
@@ -18,18 +22,23 @@ export default function Footer({ menu }: { menu: { slug: string; name: string }[
               Order online any time. We call you to confirm every order, and
               you pay in cash when the parcel reaches your door.
             </p>
-            <p className="mt-4 text-[14px] font-semibold text-charcoal">Call Us: {SUPPORT.phone}</p>
-            <p className="mt-1 text-[14px] font-semibold text-charcoal">Email Us: {SUPPORT.email}</p>
-            {whatsapp && (
-              <a
-                href={`https://wa.me/${whatsapp}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-block text-[13px] font-semibold text-charcoal underline-offset-4 hover:underline"
-              >
-                WhatsApp us: +{whatsapp}
-              </a>
+            {callNumber && (
+              <p className="mt-4 text-[14px] font-semibold text-charcoal">
+                Call Us:{" "}
+                <a href={`tel:+${whatsapp}`} className="underline-offset-4 hover:underline">
+                  {callNumber}
+                </a>
+              </p>
             )}
+            <p className="mt-1 text-[14px] font-semibold text-charcoal">
+              Email Us:{" "}
+              <a
+                href={`mailto:${SUPPORT.email}`}
+                className="underline-offset-4 hover:underline"
+              >
+                {SUPPORT.email}
+              </a>
+            </p>
           </div>
 
           <div>

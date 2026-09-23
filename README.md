@@ -187,8 +187,10 @@ Products deleted in the admin that originally came from Shopify will come back i
 
    After the switch the Shopify store no longer opens at techhulk.store. To keep the import
    button working, set `SOURCE_STORE_URL=https://69e690-39.myshopify.com` in Vercel.
-3. **Replace the placeholders** in `lib/placeholders.ts`: banner photos, ambassadors, creators,
-   phone and email. Also add the WhatsApp number.
+3. **Replace the placeholders** in `lib/placeholders.ts`: banner photos, ambassadors and
+   creators. The contact details there are real: the email is `techhulk.shop@gmail.com`, and the
+   footer's "Call Us" number is `NEXT_PUBLIC_WHATSAPP_NUMBER`, the same line as the WhatsApp
+   button.
 4. **Known gaps, not built yet:**
    - Stock does not go down when an order is placed.
    - The device type comes from the window width, so a small laptop window counts as "Mobile".
