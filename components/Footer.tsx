@@ -73,7 +73,7 @@ export default function Footer({ menu }: { menu: { slug: string; name: string }[
         </div>
 
         <div className="mt-10 flex flex-col gap-2 border-t border-[#ececec] pt-6 text-[12px] text-charcoal/65 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} TechHulk. All Rights Reserved.</p>
+          <p>&copy; 2024 TechHulk. All Rights Reserved.</p>
           <p>Cash on Delivery across Pakistan. All prices in PKR.</p>
         </div>
       </div>

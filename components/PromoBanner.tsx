@@ -77,22 +77,22 @@ export default function PromoBanner({
           </div>
         )}
 
-        <div className="relative z-10 max-w-[60%] px-6 sm:px-12 lg:px-16">
+        <div className="relative z-10 max-w-[80%] px-6 sm:max-w-[60%] sm:px-12 lg:px-16">
           <p className={`text-[10px] font-semibold uppercase tracking-[0.24em] sm:text-[11px] ${t.eyebrow}`}>
             {eyebrow}
           </p>
           <h3
-            className={`mt-2 font-serif text-[44px] font-semibold uppercase leading-none tracking-[0.02em] sm:text-[84px] ${t.title}`}
+            className={`mt-2 break-words font-serif text-[36px] font-semibold uppercase leading-none tracking-[0.02em] sm:text-[84px] ${t.title}`}
           >
             {title}
           </h3>
           <p className={`mt-3 text-[10px] font-semibold uppercase tracking-[0.28em] sm:text-[12px] ${t.subtitle}`}>
             {subtitle}
           </p>
-          <span className="btn-gold mt-6 sm:hidden">{cta}</span>
+          <span className="btn-gold mt-6 sm:!hidden">{cta}</span>
         </div>
 
-        <span className="btn-gold absolute bottom-8 right-10 z-10 hidden sm:inline-flex">{cta}</span>
+        <span className="btn-gold absolute bottom-8 right-10 z-10 !hidden sm:!inline-flex">{cta}</span>
       </Link>
     </section>
   );
