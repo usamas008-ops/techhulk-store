@@ -33,7 +33,7 @@ export default function CheckoutPage() {
   const total = subtotal + delivery;
   const router = useRouter();
   const phoneInput = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({ customer_name: "", phone: "", address: "", city: "", notes: "" });
+  const [form, setForm] = useState({ customer_name: "", phone: "", email: "", address: "", city: "", notes: "" });
   const [phoneError, setPhoneError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -66,6 +66,7 @@ export default function CheckoutPage() {
     const customer = {
       customer_name: form.customer_name.trim(),
       phone,
+      email: form.email.trim(),
       address: form.address.trim(),
       city: form.city.trim(),
       notes: form.notes.trim(),
@@ -129,6 +130,26 @@ export default function CheckoutPage() {
             />
             <p id="checkout-phone-help" className={`mt-1.5 text-[12px] ${phoneError ? "font-semibold text-sale" : "text-slate"}`}>
               {phoneError || "We call this number to confirm your order."}
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="checkout-email">Email</Label>
+            {/* Optional, and type="email" only nudges a typo: an empty box
+                passes, so this never stands between a shopper and an order. */}
+            <input
+              id="checkout-email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="ali@gmail.com"
+              value={form.email}
+              onChange={set("email")}
+              aria-describedby="checkout-email-help"
+              className={`${baseInput} border-[#dcdcdc]`}
+            />
+            <p id="checkout-email-help" className="mt-1.5 text-[12px] text-slate">
+              Optional. We call you on the phone number above either way.
             </p>
           </div>
 

@@ -46,6 +46,9 @@ export type Order = {
   order_number: number;
   customer_name: string;
   phone: string;
+  // Optional at checkout; null on every order placed before the email field
+  // existed, and on every shopper who left it blank.
+  email?: string | null;
   address: string;
   city: string;
   notes: string | null;

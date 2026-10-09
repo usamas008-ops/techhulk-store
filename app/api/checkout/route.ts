@@ -6,6 +6,14 @@ import { PHONE_HINT, PHONE_REQUIRED, normalizePakistaniMobile } from "@/lib/phon
 import { isMissingColumnError } from "@/lib/load-all";
 import { cartDeliveryFee, productDeliveryFee } from "@/lib/delivery";
 import { getDeliverySettings } from "@/lib/settings-db";
+import { normalizeEmail } from "@/lib/email";
+import { notifyNewOrder } from "@/lib/notify";
+import { sendOrderConfirmation } from "@/lib/mail";
+
+// Telling the shop and emailing the shopper both talk to servers outside
+// this one, after the order is already saved. The default 10s budget could
+// cut the request off mid-way and report a saved order as failed.
+export const maxDuration = 30;
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 
@@ -22,6 +30,9 @@ export async function POST(req: Request) {
     const city = text(customer?.city);
     const notes = text(customer?.notes);
     const rawPhone = text(customer?.phone);
+    // Optional by design: null is a normal answer, never a reason to refuse
+    // an order. Anything that is not an address is simply not stored.
+    const email = normalizeEmail(customer?.email);
 
     if (!rawPhone) {
       return NextResponse.json({ error: PHONE_REQUIRED }, { status: 400 });
@@ -85,6 +96,10 @@ export async function POST(req: Request) {
     };
     // supabase/add-delivery.sql adds this column.
     const deliveryPayload = deliveryColumns ? { delivery_fee: delivery } : {};
+    // supabase/add-order-email.sql adds this one. It rides with the delivery
+    // group so the fallback below drops both together on a database where the
+    // newer SQL files have not been run yet.
+    const emailPayload = { email };
     // Which ad or link this visitor's browser saw before checking out
     // (lib/attribution.ts). Trimmed defensively since it comes from the client.
     const attributionPayload = {
@@ -97,7 +112,7 @@ export async function POST(req: Request) {
 
     let { error: orderError } = await supabase
       .from("orders")
-      .insert({ ...basePayload, ...attributionPayload, ...deliveryPayload });
+      .insert({ ...basePayload, ...attributionPayload, ...deliveryPayload, ...emailPayload });
 
     // Those extra columns come from supabase/add-order-attribution.sql and
     // supabase/add-delivery.sql. Until both are run, drop them one group at a
@@ -148,6 +163,44 @@ export async function POST(req: Request) {
         .maybeSingle();
       orderNumber = data?.order_number ?? null;
     }
+
+    // Telling people, last of all: by this point the order and its items are
+    // saved, and both of these swallow their own failures, so a message that
+    // does not go out can never turn a good order into an error. They run
+    // together rather than one after the other so the shopper waits for the
+    // slower of the two, not for both.
+    const lines = items.map((item: any) => ({
+      title: String(item?.title ?? ""),
+      variantTitle: item?.variantTitle ?? null,
+      price: Number(item?.price) || 0,
+      quantity: Number(item?.quantity) || 1,
+    }));
+
+    await Promise.all([
+      notifyNewOrder({
+        orderNumber,
+        customerName,
+        phone,
+        city,
+        total: subtotal + delivery,
+        items: lines,
+      }),
+      // Only when the shopper actually left an address; it is optional.
+      email
+        ? sendOrderConfirmation({
+            to: email,
+            orderNumber,
+            customerName,
+            phone,
+            address,
+            city,
+            subtotal,
+            delivery,
+            total: subtotal + delivery,
+            items: lines,
+          })
+        : Promise.resolve(),
+    ]);
 
     return NextResponse.json({ orderNumber });
   } catch (err) {

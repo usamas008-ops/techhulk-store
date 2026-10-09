@@ -41,6 +41,16 @@ export default async function AdminOrderDetailPage({
           <dd className="text-paper">{order.customer_name}</dd>
           <dt className="text-muted">Phone</dt>
           <dd className="text-paper">{order.phone}</dd>
+          {order.email && (
+            <>
+              <dt className="text-muted">Email</dt>
+              <dd className="text-paper">
+                <a href={`mailto:${order.email}`} className="hover:text-signal">
+                  {order.email}
+                </a>
+              </dd>
+            </>
+          )}
           <dt className="text-muted">Address</dt>
           <dd className="text-paper">{order.address}</dd>
           <dt className="text-muted">City</dt>
