@@ -8,7 +8,8 @@ import { cartDeliveryFee, productDeliveryFee } from "@/lib/delivery";
 import { getDeliverySettings } from "@/lib/settings-db";
 import { normalizeEmail } from "@/lib/email";
 import { notifyNewOrder } from "@/lib/notify";
-import { sendOrderConfirmation } from "@/lib/mail";
+import { sendOrderConfirmation, sendShopOrderAlert } from "@/lib/mail";
+import { sourceLabel } from "@/lib/source-label";
 
 // Telling the shop and emailing the shopper both talk to servers outside
 // this one, after the order is already saved. The default 10s budget could
@@ -200,6 +201,25 @@ export async function POST(req: Request) {
             items: lines,
           })
         : Promise.resolve(),
+      // The shop's own copy with every detail, whether or not the shopper
+      // left an email. The admin link uses this request's own host, so it
+      // points at whichever domain the order was placed on.
+      sendShopOrderAlert({
+        orderNumber,
+        customerName,
+        phone,
+        email,
+        address,
+        city,
+        notes,
+        subtotal,
+        delivery,
+        total: subtotal + delivery,
+        items: lines,
+        source: sourceLabel(attributionPayload),
+        adminUrl: `${new URL(req.url).origin}/admin/orders/${orderId}`,
+        placedAt: new Date(),
+      }),
     ]);
 
     return NextResponse.json({ orderNumber });
