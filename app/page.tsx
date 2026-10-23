@@ -4,6 +4,7 @@ import HeroSlider, { type HeroSlide } from "@/components/HeroSlider";
 import PeopleRow from "@/components/PeopleRow";
 import ProductCarousel from "@/components/ProductCarousel";
 import PromoBanner from "@/components/PromoBanner";
+import Testimonials from "@/components/Testimonials";
 import TrustRow from "@/components/TrustRow";
 import { createClient } from "@/lib/supabase/server";
 import { collectionHref } from "@/lib/categories";
@@ -12,6 +13,7 @@ import { AMBASSADORS, BRANDS, CREATORS, HERO_BANNERS, PROMO_PHOTOS } from "@/lib
 import { cardNote, countVariants, discountPercent } from "@/lib/product-meta";
 import { productDeliveryFee } from "@/lib/delivery";
 import { getDeliverySettings } from "@/lib/settings-db";
+import { getPublishedTestimonials } from "@/lib/testimonials-db";
 import type { Product } from "@/lib/types";
 
 export const revalidate = 60;
@@ -38,11 +40,12 @@ export default async function HomePage({ searchParams }: { searchParams: { categ
   if (searchParams.category) redirect(collectionHref(searchParams.category));
 
   const supabase = createClient();
-  const [{ data }, { data: variantRows }, categories, delivery] = await Promise.all([
+  const [{ data }, { data: variantRows }, categories, delivery, testimonials] = await Promise.all([
     supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: false }),
     supabase.from("product_variants").select("product_id"),
     getCategories(),
     getDeliverySettings(),
+    getPublishedTestimonials(),
   ]);
 
   const all = (data as Product[]) || [];
@@ -93,6 +96,12 @@ export default async function HomePage({ searchParams }: { searchParams: { categ
       <ProductCarousel title="New Arrivals" href={collectionHref("all")} products={all.slice(0, 10)} notes={notes} labels={labels} />
 
       <TrustRow defaultDeliveryFee={delivery.defaultFee} />
+
+      {/* Right after the trust row: what customers say backs up what the shop promises. */}
+      <Testimonials
+        testimonials={testimonials}
+        products={Object.fromEntries(all.map((p) => [p.id, { title: p.title, handle: p.handle }]))}
+      />
 
       <PeopleRow kicker="Our" title="Brand Ambassadors" people={AMBASSADORS} />
 
