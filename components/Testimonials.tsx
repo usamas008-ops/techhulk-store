@@ -2,6 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { TESTIMONIAL_SOURCES, type Testimonial } from "@/lib/testimonials";
 
+// Pictures uploaded through the admin live on Supabase and go through the
+// image optimizer. A link to any other site loads straight from that site in
+// the shopper's browser: some hosts, Wikimedia among them, refuse the
+// optimizer's server-side request, and it keeps other sites' pictures off
+// this plan's image allowance.
+const optimizable = (src: string) => /^https:\/\/[^/]+\.supabase\.co\//.test(src);
+
 function Stars({ rating }: { rating: number }) {
   return (
     <span className="flex gap-0.5" aria-label={`${rating} out of 5 stars`}>
@@ -73,6 +80,7 @@ export default function Testimonials({
                     alt=""
                     fill
                     sizes="(max-width: 640px) 85vw, 32vw"
+                    unoptimized={!optimizable(t.photo_url)}
                     className="object-contain"
                   />
                 </div>

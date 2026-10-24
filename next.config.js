@@ -1,13 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "**.supabase.co" },
-      { protocol: "https", hostname: "techhulk.store" },
-      { protocol: "https", hostname: "cdn.shopify.com" },
-      // Placeholder banner and portrait photos until real ones are added.
-      { protocol: "https", hostname: "images.unsplash.com" },
-    ],
+    // Pictures from any https link may be shown, at the shop's request.
+    // Trade-off: anyone can run images through this site's optimizer, and
+    // that counts against the Vercel plan's monthly image allowance. To lock
+    // it down again, list hosts here instead (e.g. "**.supabase.co").
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
 };
 
