@@ -103,7 +103,7 @@ export default function TestimonialManager({
       : await run(() =>
           supabase.from("testimonials").insert({
             ...payload,
-            sort_order: testimonials.reduce((max, t) => Math.max(max, t.sort_order), 0) + 10,
+            sort_order: topSort(),
           })
         );
     if (ok) setForm(EMPTY);
@@ -160,8 +160,15 @@ export default function TestimonialManager({
     setForm((f) => ({ ...f, [kind === "video" ? "video_url" : "audio_url"]: url }));
   };
 
+  // The home page only shows the first 24, so anything new goes to the top or
+  // it would land past the cut and never be seen.
+  const topSort = () => testimonials.reduce((min, t) => Math.min(min, t.sort_order), 10) - 10;
+
   const approve = (t: Testimonial) =>
-    run(() => supabase.from("testimonials").update({ is_published: true }).eq("id", t.id));
+    run(() => supabase.from("testimonials").update({ is_published: true, sort_order: topSort() }).eq("id", t.id));
+
+  const toTop = (t: Testimonial) =>
+    run(() => supabase.from("testimonials").update({ sort_order: topSort() }).eq("id", t.id));
 
   // Renumber everything in the new order so equal sort values cannot get stuck.
   const move = (index: number, direction: -1 | 1) => {
@@ -374,6 +381,7 @@ export default function TestimonialManager({
                   </p>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
+                  <button type="button" aria-label="Move to top" disabled={busy || i === 0} onClick={() => toTop(t)} className="rounded-sm border border-line px-2 py-0.5 text-paper disabled:opacity-30">Top</button>
                   <button type="button" aria-label="Move up" disabled={busy || i === 0} onClick={() => move(i, -1)} className="rounded-sm border border-line px-2 py-0.5 text-paper disabled:opacity-30">↑</button>
                   <button type="button" aria-label="Move down" disabled={busy || i === testimonials.length - 1} onClick={() => move(i, 1)} className="rounded-sm border border-line px-2 py-0.5 text-paper disabled:opacity-30">↓</button>
                   <button
@@ -394,7 +402,7 @@ export default function TestimonialManager({
         </div>
       )}
 
-      <p className="text-xs text-muted">New and changed testimonials reach the home page within a minute.</p>
+      <p className="text-xs text-muted">New and changed testimonials reach the home page within a minute. Only the first 24 shown ones appear there, so use Top to bring one forward.</p>
     </div>
   );
 }
