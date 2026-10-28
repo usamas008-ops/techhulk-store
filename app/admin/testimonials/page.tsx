@@ -1,19 +1,35 @@
 import TestimonialManager from "@/components/admin/TestimonialManager";
 import { createClient } from "@/lib/supabase/server";
 import type { Testimonial } from "@/lib/testimonials";
+import { isMissingColumnError } from "@/lib/load-all";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminTestimonialsPage() {
   const supabase = createClient();
-  const [{ data: testimonials, error }, { data: products }] = await Promise.all([
+  const [withMedia, { data: products }] = await Promise.all([
     supabase
       .from("testimonials")
-      .select("id, name, city, body, rating, product_id, photo_url, source, is_published, sort_order, created_at")
+      .select("id, name, city, body, rating, product_id, photo_url, source, is_published, sort_order, created_at, video_url, audio_url, order_id, submitted_by")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false }),
     supabase.from("products").select("id, title").order("title"),
   ]);
+
+  // Before supabase/add-testimonial-media.sql the video/voice columns are
+  // missing; fall back to the original columns and say what to run.
+  let testimonials = withMedia.data as Testimonial[] | null;
+  let error = withMedia.error;
+  const mediaReady = !withMedia.error;
+  if (withMedia.error && isMissingColumnError(withMedia.error.message)) {
+    const plain = await supabase
+      .from("testimonials")
+      .select("id, name, city, body, rating, product_id, photo_url, source, is_published, sort_order, created_at")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+    testimonials = plain.data as Testimonial[] | null;
+    error = plain.error;
+  }
 
   return (
     <div className="space-y-6">
@@ -35,10 +51,19 @@ export default async function AdminTestimonialsPage() {
           <p className="mt-3 text-xs text-muted">Database message: {error.message}</p>
         </div>
       ) : (
+        <>
+        {!mediaReady && (
+          <p className="max-w-3xl rounded-md border border-line bg-panel p-4 text-sm text-muted">
+            Video and voice testimonials, and customers sending their own, need one more step: run{" "}
+            <code className="text-paper">supabase/add-testimonial-media.sql</code> in the Supabase SQL editor.
+          </p>
+        )}
         <TestimonialManager
           testimonials={(testimonials as Testimonial[]) || []}
           products={(products as { id: string; title: string }[]) || []}
+          mediaReady={mediaReady}
         />
+        </>
       )}
     </div>
   );

@@ -51,6 +51,10 @@ function reviewLinks(order: OrderEmail): { title: string; url: string }[] {
   });
 }
 
+// The home page testimonial form, with the order number filled in.
+const shareLink = (order: OrderEmail) =>
+  order.orderNumber && order.siteUrl ? `${order.siteUrl}/share?order=${order.orderNumber}` : "";
+
 function subjectFor(order: OrderEmail): string {
   return order.orderNumber
     ? `Order #${order.orderNumber} received — TechHulk`
@@ -80,6 +84,7 @@ function textBody(order: OrderEmail): string {
     ...(reviewLinks(order).length
       ? ["Once it arrives, tell others how it is:", ...reviewLinks(order).map((l) => `  ${l.title}: ${l.url}`), ""]
       : []),
+    ...(shareLink(order) ? [`Or send us a short video or voice message: ${shareLink(order)}`, ""] : []),
     "TechHulk — techhulk.store",
   ];
   return lines.join("\n");
@@ -146,6 +151,7 @@ function htmlBody(order: OrderEmail): string {
           ${reviewLinks(order).length ? `
           <p style="margin:22px 0 8px;font-size:13px;color:#3d3d3d;">Once your parcel arrives, tell others how it is:</p>
           ${reviewLinks(order).map((l) => `<a href="${esc(l.url)}" style="display:inline-block;margin:0 8px 8px 0;padding:9px 14px;border-radius:8px;border:1.5px solid #111111;color:#111111;font-size:12px;font-weight:bold;text-decoration:none;">Review ${esc(l.title)}</a>`).join("")}` : ""}
+          ${shareLink(order) ? `<p style="margin:10px 0 0;font-size:12px;color:#6b6b6b;">Or <a href="${esc(shareLink(order))}" style="color:#1e51ee;font-weight:bold;">send us a short video or voice message</a> about your order.</p>` : ""}
         </td></tr>
 
         <tr><td style="background:#fafafa;padding:18px 28px;border-top:1px solid #eeeeee;font-size:12px;color:#8a8a8a;line-height:1.7;">

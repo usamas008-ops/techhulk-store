@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { uploadProductImage } from "@/lib/upload-image";
-import { TESTIMONIAL_LIMITS, TESTIMONIAL_SOURCES, type Testimonial } from "@/lib/testimonials";
+import {
+  MEDIA_BUCKET, MEDIA_LIMITS, MEDIA_TYPES, TESTIMONIAL_LIMITS, TESTIMONIAL_SOURCES,
+  baseMime, type MediaKind, type Testimonial,
+} from "@/lib/testimonials";
 
 const inputClass = "w-full rounded-sm border border-line bg-ink px-3 py-2 text-paper";
 const labelClass = "mb-1 block text-sm text-muted";
@@ -19,12 +22,21 @@ type Draft = {
   product_id: string;
   source: string;
   photo_url: string;
+  video_url: string;
+  audio_url: string;
   is_published: boolean;
 };
 
 const EMPTY: Draft = {
   id: null, name: "", city: "", body: "", rating: "", product_id: "",
-  source: "whatsapp", photo_url: "", is_published: true,
+  source: "whatsapp", photo_url: "", video_url: "", audio_url: "", is_published: true,
+};
+
+// "…/object/public/testimonial-media/customer/x.mp4?v=1" -> "customer/x.mp4"
+const mediaPathOf = (url: string | null | undefined) => {
+  const marker = `/object/public/${MEDIA_BUCKET}/`;
+  const at = url ? url.indexOf(marker) : -1;
+  return at < 0 || !url ? null : decodeURIComponent(url.slice(at + marker.length).split("?")[0]);
 };
 
 const starsText = (rating: number | null) =>
@@ -33,9 +45,11 @@ const starsText = (rating: number | null) =>
 export default function TestimonialManager({
   testimonials,
   products,
+  mediaReady = false,
 }: {
   testimonials: Testimonial[];
   products: { id: string; title: string }[];
+  mediaReady?: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -67,7 +81,9 @@ export default function TestimonialManager({
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return setMessage("Add the customer's name.");
-    if (!form.body.trim()) return setMessage("Add what the customer said.");
+    if (!form.body.trim() && !form.video_url && !form.audio_url) {
+      return setMessage("Add what the customer said, or a video or voice message.");
+    }
 
     const payload = {
       name: form.name.trim(),
@@ -78,6 +94,8 @@ export default function TestimonialManager({
       source: form.source || null,
       photo_url: form.photo_url || null,
       is_published: form.is_published,
+      // The columns only exist after supabase/add-testimonial-media.sql.
+      ...(mediaReady ? { video_url: form.video_url || null, audio_url: form.audio_url || null } : {}),
     };
 
     const ok = form.id
@@ -102,6 +120,8 @@ export default function TestimonialManager({
       product_id: t.product_id || "",
       source: t.source || "",
       photo_url: t.photo_url || "",
+      video_url: t.video_url || "",
+      audio_url: t.audio_url || "",
       is_published: t.is_published,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -118,6 +138,30 @@ export default function TestimonialManager({
     if (error) return setMessage(error);
     if (url) setForm((f) => ({ ...f, photo_url: url }));
   };
+
+  // A video or voice message a customer sent on WhatsApp, uploaded by the
+  // admin straight to the media bucket (admins may write to it).
+  const onMedia = (kind: MediaKind) => async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const type = baseMime(file.type);
+    const known = MEDIA_TYPES[type];
+    if (!known || known.kind !== kind) return setMessage(`That ${kind === "video" ? "video" : "audio"} format is not supported.`);
+    const max = kind === "video" ? MEDIA_LIMITS.videoBytes : MEDIA_LIMITS.audioBytes;
+    if (file.size > max) return setMessage(`The file is over ${Math.round(max / 1024 / 1024)} MB.`);
+    setUploading(true);
+    setMessage("");
+    const path = `admin/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${known.ext}`;
+    const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file, { contentType: type, cacheControl: "31536000" });
+    setUploading(false);
+    if (error) return setMessage(`Upload failed: ${error.message}`);
+    const url = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
+    setForm((f) => ({ ...f, [kind === "video" ? "video_url" : "audio_url"]: url }));
+  };
+
+  const approve = (t: Testimonial) =>
+    run(() => supabase.from("testimonials").update({ is_published: true }).eq("id", t.id));
 
   // Renumber everything in the new order so equal sort values cannot get stuck.
   const move = (index: number, direction: -1 | 1) => {
@@ -136,7 +180,12 @@ export default function TestimonialManager({
   const remove = (t: Testimonial) => {
     if (!confirm(`Delete ${t.name}'s testimonial? This cannot be undone.`)) return;
     if (form.id === t.id) setForm(EMPTY);
-    run(() => supabase.from("testimonials").delete().eq("id", t.id));
+    // Take its video/voice file with it, so deleted ones stop using storage.
+    const files = [mediaPathOf(t.video_url), mediaPathOf(t.audio_url)].filter(Boolean) as string[];
+    run(async () => {
+      if (files.length) await supabase.storage.from(MEDIA_BUCKET).remove(files);
+      return supabase.from("testimonials").delete().eq("id", t.id);
+    });
   };
 
   return (
@@ -232,6 +281,33 @@ export default function TestimonialManager({
           {uploading && <p className="mt-1 text-xs text-muted">Uploading...</p>}
         </div>
 
+        {mediaReady && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(["video", "audio"] as const).map((kind) => {
+              const url = kind === "video" ? form.video_url : form.audio_url;
+              return (
+                <div key={kind}>
+                  <label className={labelClass}>{kind === "video" ? "Video (optional)" : "Voice message (optional)"}</label>
+                  {url ? (
+                    <div className="space-y-2">
+                      {kind === "video" ? (
+                        <video src={url} controls playsInline className="max-h-48 rounded-sm border border-line bg-black" />
+                      ) : (
+                        <audio src={url} controls className="w-full" />
+                      )}
+                      <button type="button" onClick={() => setForm({ ...form, [kind === "video" ? "video_url" : "audio_url"]: "" })} className="text-sm text-danger hover:underline">
+                        Remove {kind === "video" ? "video" : "voice message"}
+                      </button>
+                    </div>
+                  ) : (
+                    <input type="file" accept={kind === "video" ? "video/*" : "audio/*"} onChange={onMedia(kind)} disabled={uploading} className="text-sm text-paper" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <label className="flex items-center gap-2 text-sm text-paper">
           <input
             type="checkbox"
@@ -247,6 +323,31 @@ export default function TestimonialManager({
       </form>
 
       {message && <p className="text-sm text-danger">{message}</p>}
+
+      {testimonials.some((t) => t.submitted_by === "customer" && !t.is_published) && (
+        <div className="max-w-3xl space-y-3 rounded-md border border-signal/40 bg-panel p-4">
+          <h2 className="font-display text-lg font-semibold text-paper">
+            Waiting for approval ({testimonials.filter((t) => t.submitted_by === "customer" && !t.is_published).length})
+          </h2>
+          <p className="text-xs text-muted">Sent by customers, checked against their order. Watch or listen first, then approve or delete.</p>
+          {testimonials.filter((t) => t.submitted_by === "customer" && !t.is_published).map((t) => (
+            <div key={t.id} className="rounded-sm border border-line bg-ink p-3">
+              <p className="text-sm font-semibold text-paper">
+                {t.name}{t.city && <span className="font-normal text-muted"> · {t.city}</span>}
+                <span className="ml-2 text-xs text-signal">Verified buyer</span>
+                {t.rating ? <span className="ml-2 text-xs text-gold">{starsText(t.rating)}</span> : null}
+              </p>
+              {t.video_url && <video src={t.video_url} controls playsInline className="mt-2 max-h-72 rounded-sm bg-black" />}
+              {t.audio_url && <audio src={t.audio_url} controls className="mt-2 w-full" />}
+              {t.body && <p className="mt-2 whitespace-pre-line text-sm text-paper/90">{t.body}</p>}
+              <div className="mt-3 flex gap-4 text-sm">
+                <button type="button" disabled={busy} onClick={() => approve(t)} className="font-semibold text-signal hover:underline">Approve</button>
+                <button type="button" disabled={busy} onClick={() => remove(t)} className="text-danger hover:underline">Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {testimonials.length === 0 ? (
         <p className="max-w-3xl rounded-md border border-line bg-panel p-6 text-sm text-muted">
@@ -267,6 +368,9 @@ export default function TestimonialManager({
                     {t.source && ` · via ${TESTIMONIAL_SOURCES[t.source] || t.source}`}
                     {t.product_id && productTitle[t.product_id] && ` · ${productTitle[t.product_id]}`}
                     {t.photo_url && " · has photo"}
+                    {t.video_url && " · 🎥 video"}
+                    {t.audio_url && " · 🎤 voice"}
+                    {t.order_id && " · verified buyer"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 text-sm">

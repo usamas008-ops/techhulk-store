@@ -46,6 +46,9 @@ export default function Testimonials({
             {average.toFixed(1)} out of 5 · {rated.length} {rated.length === 1 ? "rating" : "ratings"}
           </p>
         )}
+        <Link href="/share" className="btn-soft">
+          Share your experience
+        </Link>
       </div>
 
       <div className="no-scrollbar flex snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-3">
@@ -57,7 +60,27 @@ export default function Testimonials({
               key={t.id}
               className="flex w-[85%] shrink-0 snap-start flex-col overflow-hidden rounded-[22px] bg-white sm:w-[46%] lg:w-[31.5%]"
             >
-              {t.photo_url && (
+              {t.video_url && (
+                // Only the first moment is fetched until the shopper presses play,
+                // which keeps the storage plan's monthly traffic down.
+                <video
+                  src={`${t.video_url}#t=0.1`}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="mx-3 mt-3 aspect-[4/5] w-[calc(100%-1.5rem)] rounded-[16px] bg-black object-contain"
+                />
+              )}
+              {t.audio_url && (
+                <div className="mx-3 mt-3 rounded-[16px] bg-mist p-3">
+                  <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-slate">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5 fill-current"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.93V21h2v-3.07A7 7 0 0 0 19 11z" /></svg>
+                    Voice message
+                  </p>
+                  <audio src={t.audio_url} controls preload="metadata" className="w-full" />
+                </div>
+              )}
+              {!t.video_url && t.photo_url && (
                 <div className="relative mx-3 mt-3 aspect-[4/3] overflow-hidden rounded-[16px] bg-mist">
                   <Image
                     src={t.photo_url}
@@ -78,12 +101,24 @@ export default function Testimonials({
                   </span>
                 </div>
 
-                <blockquote className="mt-2 flex-1 whitespace-pre-line text-[14px] leading-relaxed text-charcoal">
-                  {t.body}
-                </blockquote>
+                {t.body ? (
+                  <blockquote className="mt-2 flex-1 whitespace-pre-line text-[14px] leading-relaxed text-charcoal">
+                    {t.body}
+                  </blockquote>
+                ) : (
+                  <span className="flex-1" />
+                )}
 
                 <figcaption className="mt-5 border-t border-hair pt-4">
-                  <span className="block text-[14px] font-bold text-onyx">{t.name}</span>
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-[14px] font-bold text-onyx">{t.name}</span>
+                    {t.order_id && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-leaf/10 px-2 py-0.5 text-[11px] font-bold text-leaf">
+                        <svg viewBox="0 0 20 20" aria-hidden="true" className="h-3 w-3 fill-current"><path d="M8 13.6 4.4 10l-1.4 1.4L8 16.4l9-9-1.4-1.4z" /></svg>
+                        Verified buyer
+                      </span>
+                    )}
+                  </span>
                   <span className="mt-0.5 block text-[12px] text-slate">
                     {[t.city, source && `via ${source}`].filter(Boolean).join(" · ")}
                   </span>
