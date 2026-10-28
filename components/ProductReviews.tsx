@@ -87,10 +87,10 @@ function ReviewItem({ r }: { r: ProductReview }) {
 }
 
 /**
- * With reviews: a card above the product details, close to the buy button,
- * showing the first few and the rest behind "See all". Without any: a small
- * "be the first" box lower down, so an empty state never sits next to Buy.
- * The open/close uses <details>, so it works without any script.
+ * The reviews card, placed above the product details on every product page.
+ * With reviews it shows the first few and the rest behind "See all" (a
+ * <details>, so it works without any script); without any it is a short
+ * "be the first" note with the review button.
  */
 export default function ProductReviews({
   productId,
@@ -103,12 +103,10 @@ export default function ProductReviews({
 }) {
   if (reviews.length === 0) {
     return (
-      <section id="reviews" className="container-page scroll-mt-28 py-8 sm:py-10">
-        <div className="rounded-[24px] bg-white p-5 sm:p-8">
-          <h2 className="ronin-title">Customer Reviews</h2>
-          <p className="mt-3 text-[13px] text-slate">No reviews yet. Bought this? Be the first to share how it went.</p>
-          <ReviewForm productId={productId} productTitle={productTitle} />
-        </div>
+      <section id="reviews" className="mt-5 scroll-mt-28 rounded-[24px] bg-white p-5 sm:p-7">
+        <p className="mb-2 text-[13px] font-bold uppercase tracking-[0.08em] text-charcoal">Customer Reviews</p>
+        <p className="text-[13px] text-slate">No reviews yet. Bought this? Be the first to share how it went.</p>
+        <ReviewForm productId={productId} productTitle={productTitle} />
       </section>
     );
   }
