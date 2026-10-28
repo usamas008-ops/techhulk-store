@@ -8,6 +8,17 @@ import type { Testimonial } from "@/lib/testimonials";
  */
 export async function getPublishedTestimonials(): Promise<Testimonial[]> {
   const supabase = createClient();
+  const withMedia = await supabase
+    .from("testimonials")
+    .select("id, name, city, body, rating, product_id, photo_url, source, is_published, sort_order, created_at, video_url, audio_url, order_id, submitted_by")
+    .eq("is_published", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false })
+    .limit(24);
+  if (!withMedia.error && withMedia.data) return withMedia.data as Testimonial[];
+
+  // Before supabase/add-testimonial-media.sql the new columns do not exist;
+  // read the original ones so the section keeps working meanwhile.
   const { data, error } = await supabase
     .from("testimonials")
     .select("id, name, city, body, rating, product_id, photo_url, source, is_published, sort_order, created_at")
