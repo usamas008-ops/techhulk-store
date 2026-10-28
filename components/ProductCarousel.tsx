@@ -43,7 +43,7 @@ export default function ProductCarousel({
       <div className="relative">
         <div
           ref={track}
-          className="no-scrollbar -ml-[14px] flex sm:-ml-[18px] snap-x snap-mandatory overflow-x-auto scroll-smooth pb-3"
+          className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-3 sm:gap-4"
         >
           {products.map((product) => (
             <div

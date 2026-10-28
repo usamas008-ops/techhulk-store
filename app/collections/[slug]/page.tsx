@@ -68,7 +68,7 @@ export default async function CollectionPage({ params }: { params: { slug: strin
       {products.length === 0 ? (
         <p className="py-20 text-center text-[14px] text-charcoal/70">No products here yet.</p>
       ) : (
-        <div className="-ml-[14px] mt-8 grid grid-cols-2 gap-y-9 sm:-ml-[18px] sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-9 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4 xl:grid-cols-5">
           {products.map((product) => (
             <ProductCard
               key={product.id}
