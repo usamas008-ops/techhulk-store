@@ -20,7 +20,9 @@ export type OrderEmail = {
   subtotal: number;
   delivery: number;
   total: number;
-  items: { title: string; variantTitle?: string | null; price: number; quantity: number }[];
+  items: { title: string; variantTitle?: string | null; price: number; quantity: number; handle?: string | null }[];
+  // Where the review links point; they are left out when it is missing.
+  siteUrl?: string;
 };
 
 // A shopper must never sit at a spinner because a mail server is slow, and
@@ -36,6 +38,18 @@ const esc = (s: unknown) =>
   String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string)
   );
+
+// One "review this" link per product, opening its form with the order
+// number already filled in (components/ReviewForm.tsx reads ?review=).
+function reviewLinks(order: OrderEmail): { title: string; url: string }[] {
+  if (!order.orderNumber || !order.siteUrl) return [];
+  const seen = new Set<string>();
+  return order.items.flatMap((i) => {
+    if (!i.handle || seen.has(i.handle)) return [];
+    seen.add(i.handle);
+    return [{ title: i.title, url: `${order.siteUrl}/products/${encodeURIComponent(i.handle)}?review=${order.orderNumber}#write-review` }];
+  });
+}
 
 function subjectFor(order: OrderEmail): string {
   return order.orderNumber
@@ -63,6 +77,9 @@ function textBody(order: OrderEmail): string {
     "Payment: Cash on Delivery. Pay the courier when your parcel arrives.",
     `We will call you on ${order.phone} to confirm this order before we send it.`,
     "",
+    ...(reviewLinks(order).length
+      ? ["Once it arrives, tell others how it is:", ...reviewLinks(order).map((l) => `  ${l.title}: ${l.url}`), ""]
+      : []),
     "TechHulk — techhulk.store",
   ];
   return lines.join("\n");
@@ -126,6 +143,9 @@ function htmlBody(order: OrderEmail): string {
               ${where ? `<br>Delivering to: ${where}` : ""}
             </td></tr>
           </table>
+          ${reviewLinks(order).length ? `
+          <p style="margin:22px 0 8px;font-size:13px;color:#3d3d3d;">Once your parcel arrives, tell others how it is:</p>
+          ${reviewLinks(order).map((l) => `<a href="${esc(l.url)}" style="display:inline-block;margin:0 8px 8px 0;padding:9px 14px;border-radius:8px;border:1.5px solid #111111;color:#111111;font-size:12px;font-weight:bold;text-decoration:none;">Review ${esc(l.title)}</a>`).join("")}` : ""}
         </td></tr>
 
         <tr><td style="background:#fafafa;padding:18px 28px;border-top:1px solid #eeeeee;font-size:12px;color:#8a8a8a;line-height:1.7;">

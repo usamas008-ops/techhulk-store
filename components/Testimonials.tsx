@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import Stars from "@/components/Stars";
 import { TESTIMONIAL_SOURCES, type Testimonial } from "@/lib/testimonials";
 
 // Pictures uploaded through the admin live on Supabase and go through the
@@ -8,23 +9,6 @@ import { TESTIMONIAL_SOURCES, type Testimonial } from "@/lib/testimonials";
 // optimizer's server-side request, and it keeps other sites' pictures off
 // this plan's image allowance.
 const optimizable = (src: string) => /^https:\/\/[^/]+\.supabase\.co\//.test(src);
-
-function Stars({ rating }: { rating: number }) {
-  return (
-    <span className="flex gap-0.5" aria-label={`${rating} out of 5 stars`}>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <svg
-          key={n}
-          viewBox="0 0 20 20"
-          aria-hidden="true"
-          className={`h-4 w-4 ${n <= rating ? "fill-gold" : "fill-[#e3e3e3]"}`}
-        >
-          <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.5 7.7l5.9-.9z" />
-        </svg>
-      ))}
-    </span>
-  );
-}
 
 // Real customers' words, added from /admin/testimonials. Nothing renders
 // until at least one is published, so an empty table never leaves an empty

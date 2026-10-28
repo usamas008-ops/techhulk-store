@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddToCartForm from "@/components/AddToCartForm";
 import ProductCarousel from "@/components/ProductCarousel";
+import ProductReviews, { ReviewSummaryLink } from "@/components/ProductReviews";
 import { CashIcon, PhoneIcon, TruckIcon } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { categoryLabel, collectionHref } from "@/lib/categories";
@@ -11,6 +12,7 @@ import { cardNote, countVariants, discountPercent } from "@/lib/product-meta";
 import { productDeliveryFee } from "@/lib/delivery";
 import { getDeliverySettings } from "@/lib/settings-db";
 import { descriptionHtml } from "@/lib/format-description";
+import { getApprovedReviews } from "@/lib/reviews-db";
 import type { Product, ProductVariant } from "@/lib/types";
 
 export const revalidate = 60;
@@ -32,7 +34,7 @@ export default async function ProductPage({
   if (!product) notFound();
   const p = product as Product;
 
-  const [{ data: variantRows }, { data: allVariantRows }, { data: relatedRows }] =
+  const [{ data: variantRows }, { data: allVariantRows }, { data: relatedRows }, reviews] =
     await Promise.all([
       supabase
         .from("product_variants")
@@ -49,6 +51,7 @@ export default async function ProductPage({
             .neq("id", p.id)
             .limit(10)
         : Promise.resolve({ data: [] as Product[] }),
+      getApprovedReviews(p.id),
     ]);
 
   const related = (relatedRows as Product[]) || [];
@@ -138,6 +141,8 @@ export default async function ProductPage({
             {p.title}
           </h1>
 
+          <ReviewSummaryLink reviews={reviews} />
+
           <div className="mt-5 flex flex-wrap items-baseline gap-3">
             <span className="text-[28px] font-black text-onyx">
               Rs.{p.price.toLocaleString()}
@@ -194,6 +199,8 @@ export default async function ProductPage({
           )}
         </div>
       </div>
+
+      <ProductReviews productId={p.id} productTitle={p.title} reviews={reviews} />
 
       {p.category && related.length > 0 && (
         <ProductCarousel

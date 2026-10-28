@@ -69,13 +69,17 @@ export async function POST(req: Request) {
     // been run, so the order can be written in the right shape the first time.
     // A failed insert still burns an order number, and those gaps are visible.
     let deliveryColumns = false;
+    // Product handles, read in the same query, so the confirmation email can
+    // link each product's review form.
+    const handleById: Record<string, string> = {};
     if (productIds.length > 0) {
       const { data: feeRows, error: feeError } = await supabase
         .from("products")
-        .select("id, delivery_fee")
+        .select("id, delivery_fee, handle")
         .in("id", productIds);
       if (!feeError && feeRows) {
         deliveryColumns = true;
+        for (const row of feeRows) handleById[row.id] = row.handle;
         const settings = await getDeliverySettings();
         delivery = cartDeliveryFee(
           feeRows.map((row) => ({ deliveryFee: productDeliveryFee(row, settings) }))
@@ -175,6 +179,7 @@ export async function POST(req: Request) {
       variantTitle: item?.variantTitle ?? null,
       price: Number(item?.price) || 0,
       quantity: Number(item?.quantity) || 1,
+      handle: handleById[item?.productId] || null,
     }));
 
     await Promise.all([
@@ -199,6 +204,7 @@ export async function POST(req: Request) {
             delivery,
             total: subtotal + delivery,
             items: lines,
+            siteUrl: new URL(req.url).origin,
           })
         : Promise.resolve(),
       // The shop's own copy with every detail, whether or not the shopper
