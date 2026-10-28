@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
@@ -186,14 +187,27 @@ export default function CheckoutPage() {
 
       <div className="h-fit rounded-[24px] bg-white p-6">
         <p className="eyebrow text-night">Order summary</p>
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-4">
           {items.map((item) => (
-            <div key={`${item.productId}-${item.variantId}`} className="flex justify-between gap-3 text-[12px]">
-              <span className="text-slate">
-                {item.title}
-                {item.variantTitle ? ` (${item.variantTitle})` : ""} x{item.quantity}
+            <div key={`${item.productId}-${item.variantId}`} className="flex items-center gap-3">
+              {/* Same picture as in the cart, with the quantity on its corner. */}
+              <div className="relative h-14 w-14 shrink-0">
+                <div className="relative h-full w-full overflow-hidden rounded-[12px] border border-hair bg-[#f6f6f6]">
+                  {item.image && (
+                    <Image src={item.image} alt={item.title} fill sizes="56px" className="object-contain p-1" />
+                  )}
+                </div>
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-onyx px-1 text-[10px] font-bold text-white">
+                  {item.quantity}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 text-[12.5px] font-semibold leading-snug text-night">{item.title}</p>
+                {item.variantTitle && <p className="mt-0.5 text-[11.5px] text-slate">{item.variantTitle}</p>}
+              </div>
+              <span className="whitespace-nowrap text-[12.5px] font-semibold text-night">
+                Rs.{(item.price * item.quantity).toLocaleString()}
               </span>
-              <span className="whitespace-nowrap font-semibold text-night">Rs.{(item.price * item.quantity).toLocaleString()}</span>
             </div>
           ))}
         </div>
