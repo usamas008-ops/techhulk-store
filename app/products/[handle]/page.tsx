@@ -186,6 +186,10 @@ export default async function ProductPage({
             ))}
           </div>
 
+          {reviews.length > 0 && (
+            <ProductReviews productId={p.id} productTitle={p.title} reviews={reviews} />
+          )}
+
           {p.description && (
             <div className="mt-5 rounded-[24px] bg-white p-5 sm:p-7">
               <p className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-charcoal">
@@ -200,7 +204,9 @@ export default async function ProductPage({
         </div>
       </div>
 
-      <ProductReviews productId={p.id} productTitle={p.title} reviews={reviews} />
+      {reviews.length === 0 && (
+        <ProductReviews productId={p.id} productTitle={p.title} reviews={reviews} />
+      )}
 
       {p.category && related.length > 0 && (
         <ProductCarousel
