@@ -78,7 +78,6 @@ export default async function CollectionPage({ params }: { params: { slug: strin
                 variantCounts[product.id] || 0,
                 productDeliveryFee(product, delivery)
               )}
-              categoryName={product.category ? labels[product.category] : undefined}
             />
           ))}
         </div>

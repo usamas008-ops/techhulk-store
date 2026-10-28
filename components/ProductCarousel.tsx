@@ -13,13 +13,11 @@ export default function ProductCarousel({
   href,
   products,
   notes,
-  labels = {},
 }: {
   title: string;
   href?: string;
   products: Product[];
   notes: Record<string, string>;
-  labels?: Record<string, string>;
 }) {
   const track = useRef<HTMLDivElement>(null);
 
@@ -55,7 +53,6 @@ export default function ProductCarousel({
               <ProductCard
                 product={product}
                 note={notes[product.id]}
-                categoryName={product.category ? labels[product.category] : undefined}
               />
             </div>
           ))}

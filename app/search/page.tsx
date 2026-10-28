@@ -5,7 +5,6 @@ import { collectionHref } from "@/lib/categories";
 import { cardNote, countVariants } from "@/lib/product-meta";
 import { productDeliveryFee } from "@/lib/delivery";
 import { getDeliverySettings } from "@/lib/settings-db";
-import { getCategories, labelsOf } from "@/lib/categories-db";
 import type { Product } from "@/lib/types";
 
 export default async function SearchPage({
@@ -16,7 +15,6 @@ export default async function SearchPage({
   const query = (searchParams.q || "").trim().slice(0, 80);
   const supabase = createClient();
 
-  const labels = labelsOf(await getCategories());
   const delivery = await getDeliverySettings();
   let products: Product[] = [];
   let variantCounts: Record<string, number> = {};
@@ -89,7 +87,6 @@ export default async function SearchPage({
                       variantCounts[product.id] || 0,
                       productDeliveryFee(product, delivery)
                     )}
-                    categoryName={product.category ? labels[product.category] : undefined}
                   />
                 ))}
               </div>

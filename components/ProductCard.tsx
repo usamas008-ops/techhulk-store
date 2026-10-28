@@ -1,27 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
-import { categoryLabel } from "@/lib/categories";
 import { discountPercent } from "@/lib/product-meta";
 import type { Product } from "@/lib/types";
 
-// Ronin-style card: vertical category ribbon on the left edge, image tile,
-// uppercase title, one short note, then price and a blue "Buy Now" button.
+// Ronin-style card: image tile, uppercase title, one short note, then price
+// and a blue "Buy Now" button.
 export default function ProductCard({
   product,
   note,
-  categoryName,
 }: {
   product: Product;
   note?: string;
-  categoryName?: string;
 }) {
   const off = discountPercent(product);
   const compareAt = product.compare_at_price;
-  const ribbon = categoryName || (product.category ? categoryLabel(product.category) : "TechHulk");
 
   return (
-    <Link href={`/products/${product.handle}`} className="group relative block pl-[18px]">
-      <span className="badge-vertical">{ribbon}</span>
+    <Link href={`/products/${product.handle}`} className="group relative block">
 
       <div className="relative aspect-square overflow-hidden rounded-[16px] bg-white">
         {product.image_url ? (

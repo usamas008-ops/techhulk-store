@@ -73,7 +73,6 @@ export default async function HomePage({ searchParams }: { searchParams: { categ
       href={collectionHref(row.category.slug)}
       products={row.products}
       notes={notes}
-      labels={labels}
     />
   );
 
@@ -93,7 +92,7 @@ export default async function HomePage({ searchParams }: { searchParams: { categ
         />
       )}
 
-      <ProductCarousel title="New Arrivals" href={collectionHref("all")} products={all.slice(0, 10)} notes={notes} labels={labels} />
+      <ProductCarousel title="New Arrivals" href={collectionHref("all")} products={all.slice(0, 10)} notes={notes} />
 
       <TrustRow defaultDeliveryFee={delivery.defaultFee} />
 
@@ -107,7 +106,7 @@ export default async function HomePage({ searchParams }: { searchParams: { categ
 
       {firstRow && categoryRow(firstRow)}
 
-      <ProductCarousel title="Top Deals" href={collectionHref("all")} products={deals} notes={notes} labels={labels} />
+      <ProductCarousel title="Top Deals" href={collectionHref("all")} products={deals} notes={notes} />
 
       {inCategory("chargers").length > 0 && (
         <PromoBanner

@@ -201,7 +201,6 @@ export default async function ProductPage({
           href={collectionHref(p.category)}
           products={related}
           notes={notes}
-          labels={labels}
         />
       )}
     </div>

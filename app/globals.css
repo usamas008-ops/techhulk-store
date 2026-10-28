@@ -151,27 +151,6 @@ body {
 }
 
 /* Vertical ribbon on the left edge of a product card. */
-.badge-vertical {
-  position: absolute;
-  left: 0;
-  top: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 116px;
-  border-radius: 10px 0 0 10px;
-  background-image: linear-gradient(0deg, #03b1e6, #0354cd);
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: #ffffff;
-  white-space: nowrap;
-  overflow: hidden;
-}
 
 /* Page-coloured tab cut into the bottom-right of the hero banner. */
 .hero-notch {
